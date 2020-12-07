@@ -30,11 +30,11 @@ if __name__ == '__main__':
                                                       model_name='EfficientNetB0',
                                                       imgs=img)
     # print(detect_eval_model.summary())
-    with tf.GradientTape() as tape:
-        output = detect_eval_model(img)
-
-    fts, endpoints = output[1:6], [output[0], output[-2]]
-    for i in range(len(fts)):
-        print(fts[i].shape)
-    for i in range(len(endpoints)):
-        print(endpoints[i].shape)
+    # with tf.GradientTape() as tape:
+    #     output = detect_eval_model(img)
+    #
+    # fts, endpoints = output[1:6], [output[0], output[-2]]
+    # for i in range(len(fts)):
+    #     print(fts[i].shape)
+    # for i in range(len(endpoints)):
+    #     print(endpoints[i].shape)

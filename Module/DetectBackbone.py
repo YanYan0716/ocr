@@ -4,22 +4,26 @@ from tensorflow.python.keras.models import Model
 from tensorflow.keras import layers, regularizers
 import numpy as np
 
-
 from Module.efficientnet.lite.efficientnet_lite_builder import build_model_base
 
 
 def unpool(inputs):
-    return tf.image.resize(inputs, size=[tf.shape(inputs)[1]*2, tf.shape(inputs)[2]*2])
+    return tf.image.resize(inputs, size=[tf.shape(inputs)[1] * 2, tf.shape(inputs)[2] * 2])
 
 
 def normalize(image):
     return tf.cast(image, tf.float32) / 255.0
 
 
-def my_conv(inputs, output_num, keernel_size=1, activation_fc='relu', bn=True):
-    x = layers.Conv2D(output_num, keernel_size, activation=activation_fc, kernel_regularizer=regularizers.l2(1e-5))(inputs)
-    if bn==True:
-        x = layers.BatchNormalization(epsilon=1e-5, scale=True)(x)
+def my_conv(inputs, output_num, keernel_size=1, activation_fn='relu', bn=True):
+    x = layers.Conv2D(output_num,
+                      keernel_size,
+                      activation=activation_fn,
+                      kernel_regularizer=regularizers.l2(1e-5),
+                      trainable=False,
+                      padding='same')(inputs)
+    if bn == True:
+        x = layers.BatchNormalization(epsilon=1e-5, scale=True, trainable=False)(x)
     return x
 
 
@@ -68,7 +72,13 @@ class DetectModel(object):
             # 图片归一化
             imgs = normalize(imgs)
             output = model(imgs)
-        fts, endpoints = output[1:6], [output[0], output[-2]]
+        fts, endpoints = output[1:6][::-1], [output[0], output[-2]]
+
+        # for i in range(len(fts)):
+        #     print(fts[i].shape)
+        # for i in range(len(endpoints)):
+        #     print(endpoints[i].shape)
+
 
         g = [None, None, None, None]
         h = [None, None, None, None]
@@ -82,17 +92,40 @@ class DetectModel(object):
                 h[i] = my_conv(fts[i], num_outputs_recong[i], 1)
             else:
                 f_t = my_conv(fts[i], num_outputs_recong[i], 1)
-                c1_1 = my_conv(tf.concat([g[i-1], f_t], axis=-1), num_outputs_recong[i], 1)
+                c1_1 = my_conv(tf.concat([g[i - 1], f_t], axis=-1),
+                               num_outputs_recong[i],
+                               1)
                 h[i] = my_conv(c1_1, num_outputs_recong[i], 3)
 
-            if i<=2:
+            if i <= 2:
+                g[i] = unpool(h[i])
+            else:
+                g[i] = my_conv(h[i], num_outputs_recong[i], 3)
+
+        for i in range(1, 5):
+            if i == 1:
+                h_recong[i] = my_conv(fts[i], num_outputs_recong[i], 1)
+            else:
+                f_t = my_conv(fts[i], num_outputs_recong[i], 1)
+                c1_1_recong = my_conv(tf.concat([g_recong[i-1], f_t], axis=-1),
+                                      num_outputs_recong[i],
+                                      1)
+                h_recong[i] = my_conv(c1_1_recong, num_outputs_recong[i], 3)
+
+            if i <= 3:
                 g_recong[i] = unpool(h_recong[i])
             else:
                 g_recong[i] = my_conv(h_recong[i], num_outputs_recong[i], 3)
 
-        F_score = my_conv(g[3],1,1, activation_fc='sigmoid', bn=False)
+        F_score = my_conv(g[3], 1, 1, activation_fn='sigmoid', bn=False)
         TEXT_SCALE = 512
-        geo_map = my_conv(g[3], 4, 1, activation_fc='sigmoid', bn=False)*TEXT_SCALE
+        geo_map = my_conv(g[3], 4, 1, activation_fn='sigmoid', bn=False) * TEXT_SCALE
         angle_map = (my_conv(g[3], 1, 1, activation_fn='sigmoid', bn=False) - 0.5) * np.pi / 2
         F_geometry = tf.concat([geo_map, angle_map], axis=-1)
+
+        print(g_recong[4].shape)
+        print(F_score.shape)
+        print(F_geometry.shape)
+
         return g_recong[4], F_score, F_geometry
+
