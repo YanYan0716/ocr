@@ -1,5 +1,6 @@
 import cv2
 
+
 def ResizeImg(img, max_h=1000, max_w=1000):
     '''
     限制图像的最大尺寸，同时要保持原比例
