@@ -18,18 +18,59 @@ def restore_rectangle(origin, geometry):
     d_0 = d[angle >= 0]
     angle_0 = angle[angle >= 0]
     if origin_0.shape[0] > 0:
-        pass
+        '''
+        解析：
+            origin_0的坐标是原始图片中的坐标，假设我们要检测的图片是224*224，则origin_0中的坐标与真实图片坐标是对应的
+            d_0中的距离是变换后的距离，经过rotate后产生的即为检测图片中的距离
+            p中相当于存放矩形框，
+            origin_0中的坐标与矩形框各个边的距离在d_0中，因此，由origin_0的坐标值和d_0的距离可推算矩形框在原图中的位置
+            关于旋转变换中的正负号不太明白？？
+        '''
+        neg_width = -d_0[:, 0] - d_0[:, 2]
+        length = d_0[:, 1]+d_0[:, 3]
+        # p shape: [10, N]
+        p = np.array([np.zeros(d_0.shape[0]),
+                      neg_width,
+                      length,
+                      neg_width,
+                      length,
+                      np.zeros(d_0.shape[0]),
+                      np.zeros(d_0.shape[0]),
+                      np.zeros(d_0.shape[0]),
+                      d_0[:, 3],
+                      -d_0[:, 2]])
+        p = p.transpose((1, 0)).reshape((-1, 5, 2)) # p shape:[N, 5, 2]
+        print(f'd_0: {d_0}')
+        print(f'p: {p}')
+        print(f'angle_0: {angle_0}')
+        rotate_matrix_x = np.array([np.cos(angle_0), np.sin(angle_0)]).transpose((1, 0))
+        rotate_matrix_x = np.repeat(rotate_matrix_x, 5, axis=1).reshape(-1, 2, 5).transpose((0, 2, 1))
+
+        rotate_matrix_y = np.array([-np.sin(angle_0), np.cos(angle_0)]).transpose((1, 0))
+        rotate_matrix_y = np.repeat(rotate_matrix_y, 5, axis=1).reshape(-1, 2, 5).transpose((0, 2, 1))
+
+        p_rotate_x = np.sum(rotate_matrix_x*p, axis=2)[:, :, np.newaxis]
+        p_rotate_y = np.sum(rotate_matrix_y*p, axis=2)[:, :, np.newaxis]
+        p_rotate = np.concatenate([p_rotate_x, p_rotate_y], axis=2)
+        p3_in_origin = origin_0 - p_rotate[:, 4, :]
+        print(f'p_rotate: {p_rotate}')
+        print(f'origin_0: {origin_0}')
+        print(f'p3_in_origin: {p3_in_origin}')
+        new_p0 = p_rotate[:, 0, :] + p3_in_origin  # N*2
+        new_p1 = p_rotate[:, 1, :] + p3_in_origin
+        new_p2 = p_rotate[:, 2, :] + p3_in_origin
+        new_p3 = p_rotate[:, 3, :] + p3_in_origin
+
+        new_p_0 = np.concatenate([new_p0[:, np.newaxis, :], new_p1[:, np.newaxis, :],
+                                  new_p2[:, np.newaxis, :], new_p3[:, np.newaxis, :]], axis=1)  # N*4*2
+        print(f'new_p_0: {new_p_0}')
+
     # 对于角度小于0的情况
     origin_1 = origin[angle < 0]
     d_1 = d[angle < 0]
     angle_1 = angle[angle < 0]
     if origin_1.shape[0] > 0:
-        p = np.array([-d_1[:, 1] - d_1[:, 3], -d_1[:, 0] - d_1[:, 2],
-                      np.zeros(d_1.shape[0]), -d_1[:, 0] - d_1[:, 2],
-                      np.zeros(d_1.shape[0]), np.zeros(d_1.shape[0]),
-                      -d_1[:, 1] - d_1[:, 3], np.zeros(d_1.shape[0]),
-                      -d_1[:, 1], -d_1[:, 2]])
-        print(p.shape)
+        pass
     return 0, 1,
 
 
@@ -66,7 +107,10 @@ def detect_contours(score_map, geo_map, score_map_thresh=0.8, boc_thresh=0.1, nm
                                             cv2.RETR_EXTERNAL,
                                             cv2.CHAIN_APPROX_SIMPLE)
     res_boxes = []
+    i = 0
     for cnt in contours0:
+        i+= 1
+        print(i)
         vis = np.zeros((h, w), np.uint8)
         # 获取近似多边形
         contours = cv2.approxPolyDP(cnt, 3, True)
@@ -77,10 +121,11 @@ def detect_contours(score_map, geo_map, score_map_thresh=0.8, boc_thresh=0.1, nm
         # 此处获得的坐标相当于原始图片缩小4倍之后的，所以下面的要*4
         xy_text = xy_text[np.argsort(xy_text[:, 0])]
 
-        text_box_restored, angle_m = restore_rectangle(xy_text[:, ::-1],
+        text_box_restored, angle_m = restore_rectangle(xy_text[:, ::-1]*4,
                                                        geo_map[xy_text[:, 0], xy_text[:, 1], :])
-        break
 
+        if i >1:
+            break
     return 0
 
 
@@ -90,3 +135,11 @@ if __name__ == '__main__':
     share_data = np.load('./share_data.npy')
     print(score.shape, geometry.shape, share_data.shape)
     detect_contours(score, geometry)
+
+    [[20.1339746, 17.76794919],
+     [23.59807621, 19.76794919],
+     [20.59807621, 24.96410162],
+     [17.1339746, 22.96410162]]
+
+    x= [[20.1339746, 23.59807621], [23.59807621, 20.59807621], [20.59807621, 17.1339746], [17.1339746,20.1339746]]
+    y=[[17.76794919,19.76794919],[19.76794919,24.96410162],[24.96410162,22.96410162],[22.96410162,17.76794919]]
