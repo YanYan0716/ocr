@@ -26,8 +26,8 @@ def restore_rectangle(origin, geometry):
             origin_0中的坐标与矩形框各个边的距离在d_0中，因此，由origin_0的坐标值和d_0的距离可推算矩形框在原图中的位置
             关于旋转变换中的正负号不太明白？？
         '''
-        neg_width = -d_0[:, 0] - d_0[:, 2]
-        length = d_0[:, 1]+d_0[:, 3]
+        neg_width = -d_0[:, 0] - d_0[:, 2] # 宽的相反数
+        length = d_0[:, 1]+d_0[:, 3] # 长
         # p shape: [10, N]
         p = np.array([np.zeros(d_0.shape[0]),
                       neg_width,
@@ -107,10 +107,7 @@ def detect_contours(score_map, geo_map, score_map_thresh=0.8, boc_thresh=0.1, nm
                                             cv2.RETR_EXTERNAL,
                                             cv2.CHAIN_APPROX_SIMPLE)
     res_boxes = []
-    i = 0
     for cnt in contours0:
-        i+= 1
-        print(i)
         vis = np.zeros((h, w), np.uint8)
         # 获取近似多边形
         contours = cv2.approxPolyDP(cnt, 3, True)
@@ -124,8 +121,6 @@ def detect_contours(score_map, geo_map, score_map_thresh=0.8, boc_thresh=0.1, nm
         text_box_restored, angle_m = restore_rectangle(xy_text[:, ::-1]*4,
                                                        geo_map[xy_text[:, 0], xy_text[:, 1], :])
 
-        if i >1:
-            break
     return 0
 
 
@@ -136,10 +131,8 @@ if __name__ == '__main__':
     print(score.shape, geometry.shape, share_data.shape)
     detect_contours(score, geometry)
 
-    [[20.1339746, 17.76794919],
-     [23.59807621, 19.76794919],
-     [20.59807621, 24.96410162],
-     [17.1339746, 22.96410162]]
 
     x= [[20.1339746, 23.59807621], [23.59807621, 20.59807621], [20.59807621, 17.1339746], [17.1339746,20.1339746]]
     y=[[17.76794919,19.76794919],[19.76794919,24.96410162],[24.96410162,22.96410162],[22.96410162,17.76794919]]
+
+
