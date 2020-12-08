@@ -6,7 +6,7 @@ if __name__ == '__main__':
     points = np.array([[0, 0], [6, 0], [6, -4], [0, -4], [4, -3]])
 
     angle = [60 / 180 * np.pi]
-    # # 对于角度大于0
+    # # 对于角度大于0 顺时针
     # # x' = x*cos+y*sin  y'=-x*sin+ycos
     # rotate_matrix_x = np.array([np.cos(angle), np.sin(angle)]).transpose((1, 0))
     # rotate_matrix_x = np.repeat(rotate_matrix_x, 5, axis=1).reshape(2, 5).transpose((1, 0))

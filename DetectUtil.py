@@ -25,6 +25,9 @@ def restore_rectangle(origin, geometry):
             p中相当于存放矩形框，
             origin_0中的坐标与矩形框各个边的距离在d_0中，因此，由origin_0的坐标值和d_0的距离可推算矩形框在原图中的位置
             关于旋转变换中的正负号不太明白？？
+            在二维坐标转换中，顺时针： x'=x*cos(a)+y*sin(a)    y'=-x*sin(a)+y*cos(a)
+                            逆时针:  x'=x*cos(a)-y*sin(a)    y'=x*sin(a)+y*cos(a)
+                            这其中的角度均为正数
         '''
         neg_width = -d_0[:, 0] - d_0[:, 2] # 宽的相反数
         length = d_0[:, 1]+d_0[:, 3] # 长
@@ -70,7 +73,31 @@ def restore_rectangle(origin, geometry):
     d_1 = d[angle < 0]
     angle_1 = angle[angle < 0]
     if origin_1.shape[0] > 0:
-        pass
+        neg_length = -d_1[:, 1]-d_1[:, 3]
+        neg_width = -d_1[:, 0]-d_1[:, 2]
+        p = np.array([
+            neg_length,
+            neg_width,
+            np.zeros(d_1.shape[0]),
+            neg_width,
+            np.zeros(d_1.shape[0]),
+            np.zeros(d_1.shape[0]),
+            neg_length,
+            np.zeros(d_1.shape[0]),
+            -d_1[:, 1],
+            -d_1[:, 2]
+        ])
+        # print(p)
+        p = p.transpose((1, 0)).reshape((-1, 5, 2))
+        # 使用angle_1的负号是因为本身为负数，而公式中的角度按顺时针于逆时针的都是正数
+        rotate_matrix_x = np.array([np.cos(-angle_1), -np.sin(-angle_1)]).transpose((1, 0))
+        rotate_matrix_x = np.repeat(rotate_matrix_x, 5, axis=1).reshape(-1, 2, 5).transpose((0, 2, 1))
+
+        rotate_matrix_y = np.array([np.sin(-angle_1), np.cos(-angle_1)]).transpose((1, 0))
+        rotate_matrix_y = np.repeat(rotate_matrix_y, 5, axis=1).reshape(-1, 2, 5).transpose((0, 2, 1))
+
+        p_rotate_x = np.sum(rotate_matrix_x*p, axis=2)[:,:, np.newaxis]
+        p_rotate_y = np.sum(rotate_matrix_y*p, axis=2)[:,:, np.newaxis]
     return 0, 1,
 
 
@@ -120,7 +147,7 @@ def detect_contours(score_map, geo_map, score_map_thresh=0.8, boc_thresh=0.1, nm
 
         text_box_restored, angle_m = restore_rectangle(xy_text[:, ::-1]*4,
                                                        geo_map[xy_text[:, 0], xy_text[:, 1], :])
-
+        break
     return 0
 
 
