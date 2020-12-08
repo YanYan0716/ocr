@@ -79,7 +79,6 @@ class DetectModel(object):
         # for i in range(len(endpoints)):
         #     print(endpoints[i].shape)
 
-
         g = [None, None, None, None]
         h = [None, None, None, None]
 
@@ -107,7 +106,7 @@ class DetectModel(object):
                 h_recong[i] = my_conv(fts[i], num_outputs_recong[i], 1)
             else:
                 f_t = my_conv(fts[i], num_outputs_recong[i], 1)
-                c1_1_recong = my_conv(tf.concat([g_recong[i-1], f_t], axis=-1),
+                c1_1_recong = my_conv(tf.concat([g_recong[i - 1], f_t], axis=-1),
                                       num_outputs_recong[i],
                                       1)
                 h_recong[i] = my_conv(c1_1_recong, num_outputs_recong[i], 3)
@@ -128,4 +127,3 @@ class DetectModel(object):
         print(F_geometry.shape)
 
         return g_recong[4], F_score, F_geometry
-
