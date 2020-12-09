@@ -1,13 +1,18 @@
 import numpy as np
 from PIL import Image
 import cv2
+# import lanms
 import matplotlib.pyplot as plt
+
+
+import locality_aware_nms as nms_locality
 
 
 def restore_rectangle(origin, geometry):
     '''
-
-    :param origin: shaoe:[N, 2]
+    每调用一次这个函数都是对某个矩形框中的所有像素点所带油的信息做操作，所以返回np.mean，相当于是这个矩形框中所有像素点角度
+    的均值，代表着矩形框的均值
+    :param origin: shaoe:[N, 2] 其中的每一行都是一个像素的坐标
     :param geometry: shape:[N, 5]
     :return:
     '''
@@ -44,9 +49,9 @@ def restore_rectangle(origin, geometry):
                       d_0[:, 3],
                       -d_0[:, 2]])
         p = p.transpose((1, 0)).reshape((-1, 5, 2)) # p shape:[N, 5, 2]
-        print(f'd_0: {d_0}')
-        print(f'p: {p}')
-        print(f'angle_0: {angle_0}')
+        # print(f'd_0: {d_0}')
+        # print(f'p: {p}')
+        # print(f'angle_0: {angle_0}')
         rotate_matrix_x = np.array([np.cos(angle_0), np.sin(angle_0)]).transpose((1, 0))
         rotate_matrix_x = np.repeat(rotate_matrix_x, 5, axis=1).reshape(-1, 2, 5).transpose((0, 2, 1))
 
@@ -57,9 +62,9 @@ def restore_rectangle(origin, geometry):
         p_rotate_y = np.sum(rotate_matrix_y*p, axis=2)[:, :, np.newaxis]
         p_rotate = np.concatenate([p_rotate_x, p_rotate_y], axis=2)
         p3_in_origin = origin_0 - p_rotate[:, 4, :]
-        print(f'p_rotate: {p_rotate}')
-        print(f'origin_0: {origin_0}')
-        print(f'p3_in_origin: {p3_in_origin}')
+        # print(f'p_rotate: {p_rotate}')
+        # print(f'origin_0: {origin_0}')
+        # print(f'p3_in_origin: {p3_in_origin}')
         new_p0 = p_rotate[:, 0, :] + p3_in_origin  # N*2
         new_p1 = p_rotate[:, 1, :] + p3_in_origin
         new_p2 = p_rotate[:, 2, :] + p3_in_origin
@@ -67,7 +72,7 @@ def restore_rectangle(origin, geometry):
 
         new_p_0 = np.concatenate([new_p0[:, np.newaxis, :], new_p1[:, np.newaxis, :],
                                   new_p2[:, np.newaxis, :], new_p3[:, np.newaxis, :]], axis=1)  # N*4*2
-        print(f'new_p_0: {new_p_0}')
+        # print(f'new_p_0: {new_p_0}')
     else:
         new_p_0 = np.zeros((0, 4, 2))
 
@@ -119,7 +124,7 @@ def restore_rectangle(origin, geometry):
     return np.concatenate([new_p_0, new_p_1]), np.mean(angle)
 
 
-def detect_contours(score_map, geo_map, score_map_thresh=0.8, boc_thresh=0.1, nms_thres=0.1):
+def detect_contours(score_map, geo_map, score_map_thresh=0.8, box_thresh=0.1, nms_thres=0.1):
     '''
     从网络预测中得到可理解的结果
     :param score_map:
@@ -165,7 +170,41 @@ def detect_contours(score_map, geo_map, score_map_thresh=0.8, boc_thresh=0.1, nm
 
         text_box_restored, angle_m = restore_rectangle(xy_text[:, ::-1]*4,
                                                        geo_map[xy_text[:, 0], xy_text[:, 1], :])
+        print(text_box_restored, angle_m)
+        # 返回的是所有点的坐标集合,如果旋转角度较大，那么从这些点集中找到最小外接矩形
+        # if angle_m/np.pi > 10 or angle_m/np.pi < -10:
+        #     points = text_box_restored.reshape((-1, 2))
+        #     rect = cv2.minAreaRect(points.astype(np.int32))
+        #     rec_box = cv2.boxPoints(rect)
+        #     score_sum = np.sum(score_map[xy_text[:, 0], xy_text[:, 1]])
+        #     rec_box = np.append(rec_box.reshape(-1, 8), score_sum)
+        # else:
+        #     boxes = np.zeros((text_box_restored.shape[0], 9), dtype=np.float32)
+        #     boxes[:, :8] = text_box_restored.reshape((-1, 8))
+        #     boxes[:, 8] = score_map[xy_text[:, 0], xy_text[:, 1]]
+        #     print(boxes)
+        #     # rec_box = nms_locality.nms_locality(boxes.astype(np.float64), nms_thres)
+        #     # rec_box = lanms.rec_standard_nms(boxes.astype('float32'), nms_thres)
+        # res_boxes.append(rec_box)
         break
+    '''
+    boxes=0
+    boxes = nms_locality.nms_locality(boxes.astype(np.float64), nms_thres)
+    # boxes = lanms.merge_quadrangle_n9(np.array(res_boxes).astype('int'), nms_thres)
+    boxes_list = boxes.tolist()
+    boxes_list = sorted(boxes_list, key=lambda k: [k[1], k[0]])
+    boxes = np.array(boxes_list)
+
+    if boxes.shape[0] == 0:
+        return None
+
+    # here we filter some low score boxes by the average score map, this is different from the orginal paper
+    for i, box in enumerate(boxes):
+       mask = np.zeros_like(score_map, dtype=np.uint8)
+       cv2.fillPoly(mask, box[:8].reshape((-1, 4, 2)).astype(np.int32) // 4, 1)
+       boxes[i, 8] = cv2.mean(score_map, mask)[0]
+    boxes = boxes[boxes[:,8] > box_thresh]
+    '''
     return 0
 
 
@@ -174,10 +213,12 @@ if __name__ == '__main__':
     geometry = np.load('./geometry.npy')  # 第四维存放的是角度
     share_data = np.load('./share_data.npy')
     print(score.shape, geometry.shape, share_data.shape)
-    detect_contours(score, geometry)
-
-
-    x= [[20.1339746, 23.59807621], [23.59807621, 20.59807621], [20.59807621, 17.1339746], [17.1339746,20.1339746]]
-    y=[[17.76794919,19.76794919],[19.76794919,24.96410162],[24.96410162,22.96410162],[22.96410162,17.76794919]]
-
-
+    boxes = detect_contours(score, geometry)
+    # if boxes is not None and boxes.shape[0] != 0:
+    #     boxes_detect = boxes.copy()
+    #     boxes_detect = boxes_detect[:, :8].reshape((-1, 4, 2))
+    #     for i , box in enumerate(boxes_detect):
+    #         box = sort_poly(box.astype(np.int32))
+    #         if np.linalg.norm(box[0]-box[1])<5 or np.linalg.norm(box[3]-box[0])<5:
+    #             continue
+    #         print(box)
