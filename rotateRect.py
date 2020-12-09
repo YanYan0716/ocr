@@ -43,4 +43,3 @@ if __name__ == '__main__':
     new_point = np.concatenate([new_pointX, new_pointY], axis=1)
     pp = origin - new_point[4]
     new_point = new_point + pp
-
