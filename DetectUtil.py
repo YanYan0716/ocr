@@ -28,6 +28,7 @@ def restore_rectangle(origin, geometry):
             在二维坐标转换    顺时针:  x'=x*cos(a)+y*sin(a)    y'=-x*sin(a)+y*cos(a)
                             逆时针:  x'=x*cos(a)-y*sin(a)    y'= x*sin(a)+y*cos(a)
                             这其中的角度均为正数
+            更具体理解请见rotateRect.py
         '''
         neg_width = -d_0[:, 0] - d_0[:, 2] # 宽的相反数
         length = d_0[:, 1]+d_0[:, 3] # 长
