@@ -25,8 +25,8 @@ def restore_rectangle(origin, geometry):
             p中相当于存放矩形框，
             origin_0中的坐标与矩形框各个边的距离在d_0中，因此，由origin_0的坐标值和d_0的距离可推算矩形框在原图中的位置
             关于旋转变换中的正负号不太明白？？
-            在二维坐标转换中，顺时针： x'=x*cos(a)+y*sin(a)    y'=-x*sin(a)+y*cos(a)
-                            逆时针:  x'=x*cos(a)-y*sin(a)    y'=x*sin(a)+y*cos(a)
+            在二维坐标转换    顺时针:  x'=x*cos(a)+y*sin(a)    y'=-x*sin(a)+y*cos(a)
+                            逆时针:  x'=x*cos(a)-y*sin(a)    y'= x*sin(a)+y*cos(a)
                             这其中的角度均为正数
         '''
         neg_width = -d_0[:, 0] - d_0[:, 2] # 宽的相反数
@@ -67,6 +67,8 @@ def restore_rectangle(origin, geometry):
         new_p_0 = np.concatenate([new_p0[:, np.newaxis, :], new_p1[:, np.newaxis, :],
                                   new_p2[:, np.newaxis, :], new_p3[:, np.newaxis, :]], axis=1)  # N*4*2
         print(f'new_p_0: {new_p_0}')
+    else:
+        new_p_0 = np.zeros((0, 4, 2))
 
     # 对于角度小于0的情况
     origin_1 = origin[angle < 0]
@@ -98,7 +100,22 @@ def restore_rectangle(origin, geometry):
 
         p_rotate_x = np.sum(rotate_matrix_x*p, axis=2)[:,:, np.newaxis]
         p_rotate_y = np.sum(rotate_matrix_y*p, axis=2)[:,:, np.newaxis]
-    return 0, 1,
+
+        p_rotate = np.concatenate([p_rotate_x, p_rotate_y], axis=2)
+
+        p3_in_origin = origin_1 - p_rotate[:, 4, :]
+        new_p0 = p_rotate[:, 0, :] + p3_in_origin
+        new_p1 = p_rotate[:, 1, :] + p3_in_origin
+        new_p2 = p_rotate[:, 2, :] + p3_in_origin
+        new_p3 = p_rotate[:, 3, :] + p3_in_origin
+
+        new_p_1 = np.concatenate([new_p0[:, np.newaxis, :],
+                                 new_p1[:, np.newaxis, :],
+                                 new_p2[:, np.newaxis, :],
+                                 new_p3[:, np.newaxis, :]], axis=1)
+    else:
+        new_p_1 = np.zeros((0, 4, 2))
+    return np.concatenate([new_p_0, new_p_1]), np.mean(angle)
 
 
 def detect_contours(score_map, geo_map, score_map_thresh=0.8, boc_thresh=0.1, nms_thres=0.1):
