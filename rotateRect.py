@@ -1,3 +1,7 @@
+'''
+辅助部分，形象理解旋转矩形的过程
+'''
+
 import numpy as np
 
 if __name__ == '__main__':
