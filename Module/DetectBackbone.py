@@ -74,11 +74,6 @@ class DetectModel(object):
             output = model(imgs)
         fts, endpoints = output[1:6][::-1], [output[0], output[-2]]
 
-        # for i in range(len(fts)):
-        #     print(fts[i].shape)
-        # for i in range(len(endpoints)):
-        #     print(endpoints[i].shape)
-
         g = [None, None, None, None]
         h = [None, None, None, None]
 
@@ -121,9 +116,5 @@ class DetectModel(object):
         geo_map = my_conv(g[3], 4, 1, activation_fn='sigmoid', bn=False) * TEXT_SCALE
         angle_map = (my_conv(g[3], 1, 1, activation_fn='sigmoid', bn=False) - 0.5) * np.pi / 2
         F_geometry = tf.concat([geo_map, angle_map], axis=-1)
-
-        print(g_recong[4].shape)
-        print(F_score.shape)
-        print(F_geometry.shape)
 
         return g_recong[4], F_score, F_geometry

@@ -8,6 +8,7 @@ from tensorflow.keras.models import Model
 
 from DataPreprocess.imgUtil import ResizeImg
 from Module.DetectBackbone import DetectModel
+from DetectUtil import detect_contours
 
 if __name__ == '__main__':
     # 获取一张图片
@@ -26,9 +27,15 @@ if __name__ == '__main__':
     # 网络预测过程
     weight_dir = './model_weights/efficientnetb0/efficientnetb0_notop.h5'
     detectmodel = DetectModel()
-    detect_eval_model = detectmodel.detect_eval_model(weights_dir=weight_dir,
-                                                      model_name='EfficientNetB0',
-                                                      imgs=img)
+    share_data, score, geometry = detectmodel.detect_eval_model(weights_dir=weight_dir,
+                                                                model_name='EfficientNetB0',
+                                                                imgs=img)
+
+    print(share_data.shape)
+    print(score.shape)
+    print(geometry.shape)
+
+    # boxes = detect_contours(score, geometry)
     # print(detect_eval_model.summary())
     # with tf.GradientTape() as tape:
     #     output = detect_eval_model(img)

@@ -212,7 +212,7 @@ def detect_contours(score_map, geo_map, score_map_thresh=0.8, box_thresh=0.1, nm
         cv2.fillPoly(mask, box[:8].reshape((-1, 4, 2)).astype(np.int32) // 4, 1)
         boxes[i, 8] = cv2.mean(score_map, mask)[0]
         print(boxes[:, 8])
-    boxes = boxes[boxes[:,8] > box_thresh]
+    boxes = boxes[boxes[:, 8] > box_thresh]
 
     return boxes
 
@@ -230,7 +230,7 @@ if __name__ == '__main__':
     score = np.load('./score.npy')
     geometry = np.load('./geometry.npy')  # 第四维存放的是角度
     share_data = np.load('./share_data.npy')
-    # print(score.shape, geometry.shape, share_data.shape)
+    print(score.shape, geometry.shape, share_data.shape)
     boxes = detect_contours(score, geometry)
     print(boxes)
     if boxes is not None and boxes.shape[0] != 0:
