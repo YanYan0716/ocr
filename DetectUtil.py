@@ -170,7 +170,7 @@ def detect_contours(score_map, geo_map, score_map_thresh=0.8, box_thresh=0.1, nm
 
         text_box_restored, angle_m = restore_rectangle(xy_text[:, ::-1]*4,
                                                        geo_map[xy_text[:, 0], xy_text[:, 1], :])
-        print(text_box_restored, angle_m)
+        # print(text_box_restored.reshape((-1, 8)), angle_m)
         # 返回的是所有点的坐标集合,如果旋转角度较大，那么从这些点集中找到最小外接矩形
         # if angle_m/np.pi > 10 or angle_m/np.pi < -10:
         #     points = text_box_restored.reshape((-1, 2))
@@ -186,11 +186,19 @@ def detect_contours(score_map, geo_map, score_map_thresh=0.8, box_thresh=0.1, nm
         #     # rec_box = nms_locality.nms_locality(boxes.astype(np.float64), nms_thres)
         #     # rec_box = lanms.rec_standard_nms(boxes.astype('float32'), nms_thres)
         # res_boxes.append(rec_box)
-        break
-    '''
-    boxes=0
+        score_sum = np.sum(score_map[xy_text[:, 0], xy_text[:, 1]])
+        rec_box = np.zeros((text_box_restored.shape[0], 9), dtype=np.float32)
+        rec_box[:, :8] = text_box_restored.reshape((-1, 8))
+        rec_box[:, 8] = score_sum
+        # break
+    res_boxes.append(rec_box)
+    # print(res_boxes[0].shape)
+    boxes =np.squeeze(np.array(res_boxes), axis=0)
+    # print(boxes)
+    # print(boxes.shape)
     boxes = nms_locality.nms_locality(boxes.astype(np.float64), nms_thres)
-    # boxes = lanms.merge_quadrangle_n9(np.array(res_boxes).astype('int'), nms_thres)
+    # print(boxes)
+    # # boxes = lanms.merge_quadrangle_n9(np.array(res_boxes).astype('int'), nms_thres)
     boxes_list = boxes.tolist()
     boxes_list = sorted(boxes_list, key=lambda k: [k[1], k[0]])
     boxes = np.array(boxes_list)
@@ -200,25 +208,39 @@ def detect_contours(score_map, geo_map, score_map_thresh=0.8, box_thresh=0.1, nm
 
     # here we filter some low score boxes by the average score map, this is different from the orginal paper
     for i, box in enumerate(boxes):
-       mask = np.zeros_like(score_map, dtype=np.uint8)
-       cv2.fillPoly(mask, box[:8].reshape((-1, 4, 2)).astype(np.int32) // 4, 1)
-       boxes[i, 8] = cv2.mean(score_map, mask)[0]
+        mask = np.zeros_like(score_map, dtype=np.uint8)
+        cv2.fillPoly(mask, box[:8].reshape((-1, 4, 2)).astype(np.int32) // 4, 1)
+        boxes[i, 8] = cv2.mean(score_map, mask)[0]
+        print(boxes[:, 8])
     boxes = boxes[boxes[:,8] > box_thresh]
-    '''
-    return 0
+
+    return boxes
+
+
+def sort_poly(p):
+    min_axis = np.argmin(np.sum(p, axis=1))
+    p = p[[min_axis, (min_axis + 1) % 4, (min_axis + 2) % 4, (min_axis + 3) % 4]]
+    if abs(p[0, 0] - p[1, 0]) > abs(p[0, 1] - p[1, 1]):
+        return p
+    else:
+        return p[[0, 3, 2, 1]]
 
 
 if __name__ == '__main__':
     score = np.load('./score.npy')
     geometry = np.load('./geometry.npy')  # 第四维存放的是角度
     share_data = np.load('./share_data.npy')
-    print(score.shape, geometry.shape, share_data.shape)
+    # print(score.shape, geometry.shape, share_data.shape)
     boxes = detect_contours(score, geometry)
-    # if boxes is not None and boxes.shape[0] != 0:
-    #     boxes_detect = boxes.copy()
-    #     boxes_detect = boxes_detect[:, :8].reshape((-1, 4, 2))
-    #     for i , box in enumerate(boxes_detect):
-    #         box = sort_poly(box.astype(np.int32))
-    #         if np.linalg.norm(box[0]-box[1])<5 or np.linalg.norm(box[3]-box[0])<5:
-    #             continue
-    #         print(box)
+    print(boxes)
+    if boxes is not None and boxes.shape[0] != 0:
+        boxes_detect = boxes.copy()
+        boxes_detect = boxes_detect[:, :8].reshape((-1, 4, 2))
+        im = cv2.imread('./123.jpg')
+        for i , box in enumerate(boxes_detect):
+            box = sort_poly(box.astype(np.int32))
+            if np.linalg.norm(box[0]-box[1])<5 or np.linalg.norm(box[3]-box[0])<5:
+                continue
+            print(box)
+            cv2.polylines(im, [box.astype(np.int32).reshape((-1, 1, 2))], True, color=(255, 255, 0), thickness=1)
+        cv2.imwrite('./result.jpg', im)
