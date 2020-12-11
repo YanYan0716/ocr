@@ -51,7 +51,7 @@ def load_annoatation(p):
             cnt = np.array([[x1, y1], [x2, y2], [x3, y3], [x4, y4]])
             rect = cv2.minAreaRect(cnt)
             box = cv2.boxPoints(rect)
-            box = np.int0(box) # box.shape (4, 2)
+            box = np.int0(box)  # box.shape (4, 2)
             text_polys.append(box)
             if label == '*' or label == '###' or label == '':
                 text_tags.append(True)
@@ -61,15 +61,48 @@ def load_annoatation(p):
     return np.array(text_polys, dtype=np.float32), np.array(text_tags, dtype=np.bool), labels
 
 
+def polygon_area(poly):
+    '''
+    计算面积
+    :param poly:
+    :return:
+    '''
+    edge = [
+        (poly[1][0] - poly[0][0]) * (poly[1][1] + poly[0][1]),
+        (poly[2][0] - poly[1][0]) * (poly[2][1] + poly[1][1]),
+        (poly[3][0] - poly[2][0]) * (poly[3][1] + poly[2][1]),
+        (poly[0][0] - poly[3][0]) * (poly[0][1] + poly[3][1]),
+    ]
+    return np.sum(edge) / 2
+
+
 def check_and_validate_polys(polys, tags, height, width):
+    '''
+    检查获取到的矩形框四个顶点的顺序对不对，过滤掉面积为0的情况
+    :param polys:
+    :param tags:
+    :param height:
+    :param width:
+    :return:
+    '''
     if polys.shape[0] == 0:
         return polys
-    polys[:, :, 0] = np.clip(polys[:, :, 0], 0, width-1)
-    polys[:, :, 1] = np.clip(polys[:, :, 1], 0, height-1)
+    # 矩形框的坐标应该在整张图片的范围里
+    polys[:, :, 0] = np.clip(polys[:, :, 0], 0, width - 1)
+    polys[:, :, 1] = np.clip(polys[:, :, 1], 0, height - 1)
 
     validated_polys = []
     validated_tags = []
-    pass
+
+    for poly, tag in zip(polys, tags):
+        p_area = polygon_area(poly)  # 计算矩形框的面积
+        if abs(p_area) < 1:
+            continue
+        if p_area > 0:  # 保证四个顶点的顺序是左上，右上，右下， 左下
+            poly = poly[(0, 3, 2, 1), :]
+        validated_polys.append(poly)
+        validated_tags.append(tag)
+    return np.array(validated_polys), np.array(validated_tags)
 
 
 def generator(img_list=None,
@@ -124,8 +157,11 @@ def generator(img_list=None,
 
                 # 返回的数据类型：np.array, np.array, list
                 text_polys, text_tags, text_label = load_annoatation(txt_fn)
-
+                # 检查获取到的矩形框四个顶点的顺序对不对，过滤掉面积为0的情况
                 text_polys, text_tags = check_and_validate_polys(text_polys, text_tags, h, w)
+                rd_scale = np.random.choice(random_scale) # 随机选一个scale
+                img = cv2.resize(img, dsize=None, fx=rd_scale, fy=rd_scale)
+                file_name =
             except:
                 print('data reading have something error in DataGenerator.generator')
             break
