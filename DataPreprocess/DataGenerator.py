@@ -51,7 +51,7 @@ def load_annoatation(p):
             cnt = np.array([[x1, y1], [x2, y2], [x3, y3], [x4, y4]])
             rect = cv2.minAreaRect(cnt)
             box = cv2.boxPoints(rect)
-            box = np.int0(box)
+            box = np.int0(box) # box.shape (4, 2)
             text_polys.append(box)
             if label == '*' or label == '###' or label == '':
                 text_tags.append(True)
@@ -62,7 +62,13 @@ def load_annoatation(p):
 
 
 def check_and_validate_polys(polys, tags, height, width):
+    if polys.shape[0] == 0:
+        return polys
+    polys[:, :, 0] = np.clip(polys[:, :, 0], 0, width-1)
+    polys[:, :, 1] = np.clip(polys[:, :, 1], 0, height-1)
 
+    validated_polys = []
+    validated_tags = []
     pass
 
 
