@@ -16,7 +16,9 @@ def make_rect(poly):
     # 第一种
     if (np.linalg.norm(poly[0]-poly[1])+np.linalg.norm(poly[2]-poly[3]) > \
             np.linalg.norm(poly[0]-poly[3])+np.linalg.norm(poly[1]-poly[2])):
-        print('ok')
+        theta = np.arctan2((poly[1][1]-poly[0][1]), (poly[0][1]-poly[0][0])) # 获得两点的正切值，y/x
+
+
 
 
 
