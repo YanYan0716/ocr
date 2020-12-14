@@ -392,6 +392,7 @@ if __name__ == '__main__':
         print(info.shape)
         plt.imshow(info)
         plt.show()
+        print('ok')
         break
 
     # ----------second method---------------
