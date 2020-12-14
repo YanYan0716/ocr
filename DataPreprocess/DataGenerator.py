@@ -1,10 +1,13 @@
 '''
 训练数据的生成
 '''
+import sys
+sys.path.append('../')
 import numpy as np
 import cv2
 import tensorflow as tf
 import pandas as pd
+import random
 
 import config
 
@@ -105,6 +108,12 @@ def check_and_validate_polys(polys, tags, height, width):
     return np.array(validated_polys), np.array(validated_tags)
 
 
+def img_aug(img, file_name):
+    ratio = random.uniform(0, 1)
+    if ratio < 0.1:
+        img = cv2.blur(img, (3, 3))
+
+
 def generator(img_list=None,
               gt_list=None,
               input_size=512,
@@ -161,7 +170,9 @@ def generator(img_list=None,
                 text_polys, text_tags = check_and_validate_polys(text_polys, text_tags, h, w)
                 rd_scale = np.random.choice(random_scale) # 随机选一个scale
                 img = cv2.resize(img, dsize=None, fx=rd_scale, fy=rd_scale)
-                file_name =0
+                file_name = img_fn.split('/')[-1]
+                img = img_aug(img, file_name)
+                print(file_name)
             except:
                 print('data reading have something error in DataGenerator.generator')
             break
@@ -169,15 +180,17 @@ def generator(img_list=None,
 
 
 if __name__ == '__main__':
-    df = pd.read_csv('./icdar/train/train.csv')
-    file_paths = df['file_name'].values
-    gt_paths = df['gt'].values
-    ds_train = tf.data.Dataset.from_tensor_slices((file_paths, gt_paths))
+    # ------------first method-----
+    # df = pd.read_csv('./icdar/train/train.csv')
+    # file_paths = df['file_name'].values
+    # gt_paths = df['gt'].values
+    # ds_train = tf.data.Dataset.from_tensor_slices((file_paths, gt_paths))
     # for i in ds_train:
     #     print(i)
     # ds_train = tf.data.Dataset.from_generator()
-    # img_list = open('./icdar/train/images.txt', 'r').readlines()
-    # img_list = [img_mem.strip() for img_mem in img_list]
-    # gt_list = open('./icdar/train/GT.txt', 'r').readlines()
-    # gt_list = [gt_mem.strip() for gt_mem in gt_list]
-    # generator(img_list, gt_list)
+    # ----------second method---------------
+    img_list = open('./icdar/train/images.txt', 'r').readlines()
+    img_list = [img_mem.strip() for img_mem in img_list]
+    gt_list = open('./icdar/train/GT.txt', 'r').readlines()
+    gt_list = [gt_mem.strip() for gt_mem in gt_list]
+    generator(img_list, gt_list)
