@@ -161,7 +161,7 @@ def generator(img_list=None,
                 text_polys, text_tags = check_and_validate_polys(text_polys, text_tags, h, w)
                 rd_scale = np.random.choice(random_scale) # 随机选一个scale
                 img = cv2.resize(img, dsize=None, fx=rd_scale, fy=rd_scale)
-                file_name =
+                file_name =0
             except:
                 print('data reading have something error in DataGenerator.generator')
             break
