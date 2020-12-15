@@ -4,7 +4,7 @@
 import sys
 from itertools import compress
 
-sys.path.append('D:\\algorithm\\ocr')
+sys.path.append('E:\\algorithm\\ocr')
 import numpy as np
 import cv2
 import tensorflow as tf
@@ -65,11 +65,12 @@ def load_annoatation(p):
             box = cv2.boxPoints(rect)
             box = np.int0(box)  # box.shape (4, 2)
             text_polys.append(box)
-            if label == '*' or label == '###' or label == '':
+            if label == '*' or label == '###':  # or label == '':
                 text_tags.append(True)
                 labels.append([-1])
             else:
                 labels.append(label_to_array(label))
+                text_tags.append(False)
     return np.array(text_polys, dtype=np.float32), np.array(text_tags, dtype=np.bool), labels
 
 
@@ -155,135 +156,6 @@ def img_aug(img, file_name='./temporary.jpg'):
     if ratio_2 < 0.5:
         img = 255 - img
     return img
-
-
-def generator(img_list=None,
-              gt_list=None,
-              INPUT_SIZE=512,
-              batch_size=32,
-              bachground_ratio=0,
-              random_scale=np.array([0.5, 0.6, 0.8, 0.85, 0.9, 0.95, 1.0, 1.1, 1.2, 1.4, 1.6, 2, 3, 4])
-              ):
-    '''
-    原文位置：icdar.py line:823
-    :param gt_list:
-    :param img_list:
-    :param input_size:
-    :param batch_size:
-    :param bachground_ratio:
-    :param random_scale:
-    :return:
-    '''
-    max_box_num = 64
-    max_box_width = 384
-    img_list = np.array(img_list)
-    gt_list = np.array(gt_list)
-    index = np.arange(0, img_list.shape[0])
-
-    while True:
-        # 打乱数据
-        np.random.shuffle(index)
-        np.random.shuffle(index)
-
-        images = []
-        image_fns = []
-        score_maps = []
-        geo_maps = []
-        training_masks = []
-
-        test_ployses = []
-        text_tagses = []
-        boxes_masks = []
-        text_labels = []
-        count = 0
-        for i in index:
-            try:
-                # 读取图片 对一张图片的处理
-                img_fn = img_list[i]
-                img = cv2.imread(img_fn)
-                if img is None:
-                    continue
-                h, w, _ = img.shape
-                # 读取图片对应的GT.txt文件
-                txt_fn = gt_list[i]
-
-                # 返回的数据类型：np.array, np.array, list
-                text_polys, text_tags, text_label = load_annoatation(txt_fn)
-
-                # 检查获取到的矩形框四个顶点的顺序对不对，过滤掉面积为0的情况
-                text_polys, text_tags = check_and_validate_polys(text_polys, text_tags, h, w)
-                rd_scale = np.random.choice(random_scale)  # 随机选一个scale
-
-                img = cv2.resize(img, dsize=None, fx=rd_scale, fy=rd_scale)
-                file_name = img_fn.split('/')[-1]
-                img = img_aug(img, file_name)
-                text_polys *= rd_scale
-
-                # 对图片进行裁剪
-                img, text_polys, text_tags, selected_poly = crop_area(img, text_polys, text_tags, crop_background=False)
-                if text_polys.shape[0] == 0 or len(text_label) == 0:
-                    continue
-                h, w, _ = img.shape
-                max_h_w_i = np.max([h, w, INPUT_SIZE])
-                img_padded = np.zeros((max_h_w_i, max_h_w_i, 3), dtype=np.uint8)
-                img_padded[:h, :w, :] = img.copy()  # 按照最长边进行padding，边长的最小值是INPUT_SIZE
-                img = img_padded
-                # 把图片resize到512的尺寸
-                new_h, new_w, _ = img.shape
-                img = cv2.resize(img, dsize=(INPUT_SIZE, INPUT_SIZE))
-                resize_ratio_x = INPUT_SIZE / float(new_h)
-                resize_ratio_y = INPUT_SIZE / float(new_w)
-                text_polys[:, :, 0] *= resize_ratio_x
-                text_polys[:, :, 1] *= resize_ratio_y
-                new_h, new_w, _ = img.shape
-
-                # 生成矩形框，这里的矩形是基于四个顶点坐标，带有旋转角度
-                score_map, geo_map, training_mask, rectangles = generate_rbox((new_h, new_w), text_polys, text_tags)
-
-                text_label = [text_label[i] for i in selected_poly]
-                # 文字信息的掩码，如果这个位置有信息就是True, 否则为False
-                mask = [not (word == [-1]) for word in text_label]
-
-                # 过滤掉文字信息为False的标签和矩形框
-                text_label = list(compress(text_label, mask))
-                rectangles = list(compress(rectangles, mask))
-
-                assert len(text_label) == len(rectangles)
-                if len(text_label) == 0:
-                    continue
-
-                boxes_mask = [count] * len(rectangles)
-                count += 1
-                # 以上部分是对一张图片的处理
-
-            # 把一张图片的信息加到一个batch中
-            images.append(img[:, :, ::-1].astype(np.float32))
-            image_fns.append(img_fn)
-            score_maps.append(score_map[::4, ::4, np.newaxis])
-            geo_maps.append(geo_map[::4, ::4, :].astype(np.float32))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            except:
-                print('data reading have something error in DataGenerator.generator')
-            break
-        break
-    return 'ok'
-
 
 
 def crop_area(img, polys, tags, crop_background=False, max_tries=50):
@@ -406,6 +278,151 @@ def generate_rbox(img_size, polys, tags):
     return score_map, geo_map, training_mask, rectangles
 
 
+def get_project_matrix_and_width(polys):
+    project_matrixes = []
+    box_widths = []
+    filter_box_masks = []
+    return 1, 2
+
+
+def generator(img_list=None,
+              gt_list=None,
+              INPUT_SIZE=512,
+              batch_size=32,
+              bachground_ratio=0,
+              random_scale=np.array([0.5, 0.6, 0.8, 0.85, 0.9, 0.95, 1.0, 1.1, 1.2, 1.4, 1.6, 2, 3, 4])
+              ):
+    '''
+    原文位置：icdar.py line:823
+    :param gt_list:
+    :param img_list:
+    :param input_size:
+    :param batch_size:
+    :param bachground_ratio:
+    :param random_scale:
+    :return:
+    '''
+    max_box_num = 64
+    max_box_width = 384
+    img_list = np.array(img_list)
+    gt_list = np.array(gt_list)
+    index = np.arange(0, img_list.shape[0])
+
+    while True:
+        # 打乱数据
+        np.random.shuffle(index)
+        np.random.shuffle(index)
+
+        images = []
+        image_fns = []
+        score_maps = []
+        geo_maps = []
+        training_masks = []
+
+        text_ployses = []
+        text_tagses = []
+        boxes_masks = []
+        text_labels = []
+        count = 0
+        for i in index:
+            try:
+                # 读取图片 对一张图片的处理
+                img_fn = img_list[i]
+                img = cv2.imread(img_fn)
+                if img is None:
+                    continue
+                h, w, _ = img.shape
+                # 读取图片对应的GT.txt文件
+                txt_fn = gt_list[i]
+
+                # 返回的数据类型：np.array, np.array, list
+                text_polys, text_tags, text_label = load_annoatation(txt_fn)
+
+                # 检查获取到的矩形框四个顶点的顺序对不对，过滤掉面积为0的情况
+                text_polys, text_tags = check_and_validate_polys(text_polys, text_tags, h, w)
+                # print(text_polys.shape, text_tags)
+                rd_scale = np.random.choice(random_scale)  # 随机选一个scale
+
+                img = cv2.resize(img, dsize=None, fx=rd_scale, fy=rd_scale)
+                file_name = img_fn.split('/')[-1]
+                img = img_aug(img, file_name)
+                text_polys *= rd_scale
+
+                # 对图片进行裁剪
+                img, text_polys, text_tags, selected_poly = crop_area(img, text_polys, text_tags, crop_background=False)
+                # print(text_polys.shape, text_tags)
+                if text_polys.shape[0] == 0 or len(text_label) == 0:
+                    continue
+                h, w, _ = img.shape
+                max_h_w_i = np.max([h, w, INPUT_SIZE])
+                img_padded = np.zeros((max_h_w_i, max_h_w_i, 3), dtype=np.uint8)
+                img_padded[:h, :w, :] = img.copy()  # 按照最长边进行padding，边长的最小值是INPUT_SIZE
+                img = img_padded
+                # 把图片resize到512的尺寸
+                new_h, new_w, _ = img.shape
+                img = cv2.resize(img, dsize=(INPUT_SIZE, INPUT_SIZE))
+                resize_ratio_x = INPUT_SIZE / float(new_h)
+                resize_ratio_y = INPUT_SIZE / float(new_w)
+                text_polys[:, :, 0] *= resize_ratio_x
+                text_polys[:, :, 1] *= resize_ratio_y
+                new_h, new_w, _ = img.shape
+
+                # 生成矩形框，这里的矩形是基于四个顶点坐标，带有旋转角度
+                score_map, geo_map, training_mask, rectangles = generate_rbox((new_h, new_w), text_polys, text_tags)
+                # print(rectangles[0])
+
+                text_label = [text_label[i] for i in selected_poly]
+                # 文字信息的掩码，如果这个位置有信息就是True, 否则为False
+                mask = [not (word == [-1]) for word in text_label]
+
+                # 过滤掉文字信息为False的标签和矩形框
+                text_label = list(compress(text_label, mask))
+                rectangles = list(compress(rectangles, mask))
+
+                assert len(text_label) == len(rectangles)
+                if len(text_label) == 0:
+                    continue
+
+                boxes_mask = [count] * len(rectangles)
+                count += 1
+                # 以上部分是对一张图片的处理
+
+                # 把一张图片的信息加到一个batch中
+                images.append(img[:, :, ::-1].astype(np.float32))
+                image_fns.append(img_fn)
+                # np.array([1,2,3,4,5,6,7,8,9,0])[::4] 表示每隔4个点取一个点，所以score_map shape变为【128， 128】
+                score_maps.append(score_map[::4, ::4, np.newaxis])
+                geo_maps.append(geo_map[::4, ::4, :].astype(np.float32))
+                training_masks.append(training_mask[::4, ::4, np.newaxis].astype(np.float32))
+                text_ployses.append(rectangles)
+                boxes_masks.append(boxes_mask)
+                text_labels.append(text_label)
+                text_tagses.append(text_tags)  # 其中False的数量 = len(test_ployses[0])
+
+                # 打印一个image的信息
+                # print('--------------总结一个image的相关输出--------------')
+                # print(f'images len: {len(images)}, \timage[0] shape: {images[0].shape}')
+                # print(f'image_fns len: {len(image_fns)}, \timage_fns[0] : {image_fns[0]}')
+                # print(f'score_maps len: {len(score_maps)}, \tscore_maps[0]  shape: {score_maps[0].shape}')
+                # print(f'geo_maps len: {len(geo_maps)}, \tgeo_maps[0]  shape: {geo_maps[0].shape}')
+                # print(f'training_masks len: {len(training_masks)}, \ttraining_masks[0]  shape: {training_masks[0].shape}')
+                # print(f'text_polys len: {len(text_ployses)}, \ttext_polys[0][0] len: {len(text_ployses[0])}')#, \ttext_polys[0] len: {len(test_ployses[0])}')
+                # print(f'boxes_masks len: {len(boxes_masks)}, \tboxes_masks[0]: {boxes_masks[0]}')
+                # print(f'text_labels len: {len(text_labels)}, \ttext_labels[0]: {text_labels[0]}')
+                # print(f'text_tagses len: {len(text_tagses)}, \ttext_tagses[0]: {text_tagses[0]}')
+
+                # 如果图片的数量够一个batch_size
+                if len(images) == batch_size:
+                    text_polyses = np.concatenate(text_ployses)
+                    text_tagses = np.concatenate(text_tagses)
+                    transform_matrixes, box_widths = get_project_matrix_and_width(text_polyses)
+            except:
+                print('data reading have something error in DataGenerator.generator')
+            break
+        break
+    return 'ok'
+
+
 def read_img(img_path, gt_path):
     '''
     改写generator函数，以适应tf.data.Dataset.from_tensor_slices
@@ -497,10 +514,10 @@ if __name__ == '__main__':
     gt_list = open('./icdar/train/GT.txt', 'r').readlines()
     gt_list = [gt_mem.strip() for gt_mem in gt_list]
     data_generator = generator(img_list, gt_list)
-    ds_train = tf.data.Dataset.from_generator(
-        data_generator,
-        (tf.float32, tf.int64),
-    )
-    for img, label in ds_train.take(1):
-        print(img)
-        print(label)
+    # ds_train = tf.data.Dataset.from_generator(
+    #     data_generator,
+    #     (tf.float32, tf.int64),
+    # )
+    # for img, label in ds_train.take(1):
+    #     print(img)
+    #     print(label)
