@@ -2,6 +2,7 @@
 画出任意四个顶点的最小外接矩形
 '''
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 # def make_rect(poly):
@@ -281,6 +282,7 @@ def generate_rbox(im_size, poly, tag):
         r[i] = min(np.linalg.norm(poly[i] - poly[(i + 1) % 4]),
                    np.linalg.norm(poly[i] - poly[(i - 1) % 4]))
 
+    # 找到一个比矩形框更小的范围 具体实现没有看太明白
     shrinked_poly = shrink_poly(poly.copy(), r).astype(np.int32)[np.newaxis, :, :]
     print(shrinked_poly)
     print(r)
@@ -296,7 +298,7 @@ def generate_rbox(im_size, poly, tag):
         cv2.fillPoly(training_mask, poly.astype(np.int32)[np.newaxis, :, :], 0)
     if tag:
         cv2.fillPoly(training_mask, poly.astype(np.int32)[np.newaxis, :, :], 0)
-
+    '''
     xy_in_poly = np.argwhere(poly_mask == (poly_idx + 1))
     # if geometry == 'RBOX':
     # 对任意两个顶点的组合生成一个平行四边形 - generate a parallelogram for any combination of two vertices
@@ -373,7 +375,9 @@ def generate_rbox(im_size, poly, tag):
 
     rectange = rectangle_from_parallelogram(parallelogram)
     rectange, rotate_angle = sort_rectangle(rectange)
-    print(rectange, rotate_angle)
+    '''
+    # 关于角度，逆时针是负值，顺时针是正值
+    # print(rectange, rotate_angle)
     # rectangles.append(rectange.flatten())
     # p0_rect, p1_rect, p2_rect, p3_rect = rectange
 
@@ -478,4 +482,33 @@ if __name__ == '__main__':
     point = np.array(p, dtype=np.int)
     img_size = (720, 1280)
     generate_rbox(img_size, point, 0)
-    # make_rect(point)
+    # make_rect(point) 关键在于旋转角度的大小
+    rect = cv2.minAreaRect(point)
+    print(rect)
+    box = cv2.boxPoints(rect)
+    print(box)
+
+    #  ---------绘制矩形---------
+    # 原四边形坐标，从左上角开始 p = [[2, 1], [6, 2], [6, 3], [3, 3]]
+    x = [[2, 6], [6, 6], [6, 3], [3, 2]]
+    y = [[1, 2], [2, 3], [3, 3], [3, 1]]
+    for i in range(len(x)):
+        plt.plot(x[i], y[i], color='r')
+        plt.scatter(x[i], y[i], color='r')
+
+    # 最小外接矩形的坐标 原算法得到 p = [[2, 1], [6.412, 2.103], [6, 3.75], [1.588, 2.647]]
+    x1 = [[2, 6.412], [6.412, 6], [6, 1.588], [1.588, 2]]
+    y1 = [[1, 2.103], [2.103, 3.75], [3.75, 2.647], [2.647, 1]]
+    for j in range(len(x1)):
+        plt.plot(x1[j], y1[j], color='g')
+        plt.scatter(x1[j], y1[j], color='g')
+
+    # 最小外接矩形的坐标 opencv得到 p = [[5.8235, 3.70], [1.588, 2.647], [2, 1], [6.235, 2.0588]]
+    x2 = [[5.8235, 1.588], [1.588, 2], [2, 6.235], [6.235, 5.8235]]
+    y2 = [[3.7, 2.647], [2.647, 1], [1, 2.0588], [2.0588, 3.7]]
+    for j in range(len(x2)):
+        plt.plot(x2[j], y2[j], color='b')
+        plt.scatter(x2[j], y2[j], color='b')
+    plt.xlim(-2, 10)
+    plt.ylim(-2, 10)
+    plt.show()

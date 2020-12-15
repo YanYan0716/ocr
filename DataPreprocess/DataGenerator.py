@@ -15,6 +15,8 @@ import PIL.Image as Image
 import config
 import Aug_Operations as aug
 
+from DataPreprocess.PrepareForGRB import shrink_poly, earn_rect_angle, point_dist_to_line
+
 
 def label_to_array(label):
     '''
@@ -228,16 +230,16 @@ def crop_area(img, polys, tags, crop_background=False, max_tries=50):
     h, w, _ = img.shape
     pad_h = h // 10  # 除法取整
     pad_w = w // 10
-    h_array = np.zeros((h+pad_h*2), dtype=np.int32)
-    w_array = np.zeros((w+pad_w*2), dtype=np.int32)
+    h_array = np.zeros((h + pad_h * 2), dtype=np.int32)
+    w_array = np.zeros((w + pad_w * 2), dtype=np.int32)
     for poly in polys:
         poly = np.round(poly, decimals=0).astype(np.int32)  # 将矩形框的坐标转为整数
         min_x = np.min(poly[:, 0])
         max_x = np.max(poly[:, 0])
-        w_array[min_x+pad_w:max_x+pad_w] = 1 # 相当于找到边缘扩充后的矩形框位置
+        w_array[min_x + pad_w:max_x + pad_w] = 1  # 相当于找到边缘扩充后的矩形框位置
         min_y = np.min(poly[:, 1])
         max_y = np.max(poly[:, 1])
-        h_array[min_y+pad_h:max_y+pad_h] = 1
+        h_array[min_y + pad_h:max_y + pad_h] = 1
 
     # 判断是否存在不在矩形框中的点，如果不存在就说明整张图都在矩形框里，直接返回结果
     h_axis = np.where(h_array == 0)[0]
@@ -249,15 +251,15 @@ def crop_area(img, polys, tags, crop_background=False, max_tries=50):
         xx = np.random.choice(w_axis, size=2)
         xmin = np.min(xx) - pad_w
         xmax = np.max(xx) - pad_w
-        xmin = np.clip(xmin, 0, w-1)
-        xmax = np.clip(xmax, 0, w-1)
+        xmin = np.clip(xmin, 0, w - 1)
+        xmax = np.clip(xmax, 0, w - 1)
         yy = np.random.choice(h_axis, size=2)
         ymin = np.min(yy) - pad_h
         ymax = np.max(yy) - pad_w
-        ymin = np.clip(ymin, 0, h-1)
-        ymax = np.clip(ymax, 0, h-1)
+        ymin = np.clip(ymin, 0, h - 1)
+        ymax = np.clip(ymax, 0, h - 1)
         # 过滤掉剪裁面积过小的情况
-        if xmax - xmin < 0.1*w or ymax-ymin < 0.1*h:
+        if xmax - xmin < 0.1 * w or ymax - ymin < 0.1 * h:
             continue
         if polys.shape[0] != 0:
             poly_axis_in_area = (polys[:, :, 0] >= xmin) & \
@@ -269,21 +271,17 @@ def crop_area(img, polys, tags, crop_background=False, max_tries=50):
             selected_polys = []
         if len(selected_polys) == 0:
             if crop_background:
-                return img[ymin:ymax+1, xmin:xmax+1, :], polys[selected_polys], tags[selected_polys], selected_polys
+                return img[ymin:ymax + 1, xmin:xmax + 1, :], polys[selected_polys], tags[selected_polys], selected_polys
             else:
                 continue
 
-        img = img[ymin: ymax+1, xmin: xmax+1, :]
+        img = img[ymin: ymax + 1, xmin: xmax + 1, :]
         polys = polys[selected_polys]
         tags = tags[selected_polys]
         polys[:, :, 0] -= xmin
         polys[:, :, 1] -= ymin
         return img, polys, tags, selected_polys
     return img, polys, tags, np.array(range(len(polys)))
-
-
-def shrink_poly(param, r):
-    pass
 
 
 def generate_rbox(img_size, polys, tags):
@@ -295,11 +293,11 @@ def generate_rbox(img_size, polys, tags):
     :return: 
     '''
     h, w = img_size
-    poly_mask = np.zeros((h, w), dtype=np.uint8)
+    poly_mask = np.zeros((h, w), dtype=np.uint8)  # 掩膜，类似于image segmentation中，岁每个像素进行分类
     score_map = np.zeros((h, w), dtype=np.uint8)
     geo_map = np.zeros((h, w, 5), dtype=np.float32)
 
-    training_mask = np.ones((h, w), dtype=np.uint8)
+    training_mask = np.ones((h, w), dtype=np.uint8)  # 标志图像中该点的像素值是否接受训练，数值为0表示不接受训练
     rectangles = []
 
     for poly_idx, poly_tag in enumerate(zip(polys, tags)):
@@ -308,10 +306,44 @@ def generate_rbox(img_size, polys, tags):
 
         r = [None, None, None, None]
         for i in range(4):
-            r[i] = min(np.linalg.norm(poly[i] - poly[(i+1)%4]),
-                       np.linalg.norm(poly[i] - poly[(i-1)%4]))
-        shrinked_poly = shrink_poly(poly.copy(), r)
+            r[i] = min(np.linalg.norm(poly[i] - poly[(i + 1) % 4]),
+                       np.linalg.norm(poly[i] - poly[(i - 1) % 4]))
 
+        shrinked_poly = shrink_poly(poly.copy(), r).astype(np.int32)[np.newaxis, :, :]
+        # 生成score_map 在shrinked_poly的范围内的像素点位置的值为1 否则为0
+        cv2.fillPoly(score_map, shrinked_poly, 1)
+        # 标记poly_mask 相当于对像素点打标签，0为背景
+        cv2.fillPoly(poly_mask, shrinked_poly, poly_idx + 1)
+        # 如果找到的矩形区域过小，那么就不再用
+        poly_h = min(np.linalg.norm(poly[0] - poly[3]), np.linalg.norm(poly[1] - poly[2]))
+        poly_w = min(np.linalg.norm(poly[0] - poly[1]), np.linalg.norm(poly[2] - poly[3]))
+        if min(poly_h, poly_w) < config.MIN_TEXT_SIZE:
+            cv2.fillPoly(training_mask, poly.astype(np.int32)[np.newaxis, :, :], 0)
+        if tag:
+            cv2.fillPoly(training_mask, poly.astype(np.int32)[np.newaxis, :, :], 0)
+
+        # 获得该矩形框内像素点的坐标位置
+        xy_in_poly = np.argwhere(poly_mask == (poly_idx + 1))
+
+        # 获得最小外接矩形和旋转角
+        rectangle, angle = earn_rect_angle(poly)
+        rectangles.append(rectangle.flatten())
+        p0_rect, p1_rect, p2_rect, p3_rect = rectangle
+
+        # 求矩形框中的每个像素点到四条边界的距离
+        for x, y in xy_in_poly:
+            point = np.array([x, y], dtype=np.float32)
+            # top
+            geo_map[y, x, 0] = point_dist_to_line(p0_rect, p1_rect, point)
+            # right
+            geo_map[y, x, 1] = point_dist_to_line(p1_rect, p2_rect, point)
+            # bottom
+            geo_map[y, x, 2] = point_dist_to_line(p2_rect, p3_rect, point)
+            # left
+            geo_map[y, x, 3] = point_dist_to_line(p3_rect, p0_rect, point)
+            geo_map[y, x, 4] = angle
+
+    return score_map, geo_map, training_mask, rectangles
 
 
 def read_img(img_path, gt_path):
@@ -357,7 +389,7 @@ def read_img(img_path, gt_path):
     h, w, _ = img.shape
     max_h_w_i = np.max([h, w, INPUT_SIZE])
     img_padded = np.zeros((max_h_w_i, max_h_w_i, 3), dtype=np.uint8)
-    img_padded[:h, :w, :] = img.copy() # 按照最长边进行padding，边长的最小值是INPUT_SIZE
+    img_padded[:h, :w, :] = img.copy()  # 按照最长边进行padding，边长的最小值是INPUT_SIZE
     img = img_padded
     # 把图片resize到512的尺寸
     new_h, new_w, _ = img.shape
@@ -368,9 +400,8 @@ def read_img(img_path, gt_path):
     text_polys[:, :, 1] *= resize_ratio_y
     new_h, new_w, _ = img.shape
 
+    # 生成矩形框，这里的矩形是基于四个顶点坐标，带有旋转角度
     score_map, geo_map, training_mask, rectangles = generate_rbox((new_h, new_w), text_polys, text_tags)
-
-
 
     return img,  # text_polys, text_tags, text_label
 
