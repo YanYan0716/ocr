@@ -2,6 +2,7 @@
 训练数据的生成
 '''
 import sys
+from itertools import compress
 
 sys.path.append('D:\\algorithm\\ocr')
 import numpy as np
@@ -156,14 +157,14 @@ def img_aug(img, file_name='./temporary.jpg'):
     return img
 
 
-'''
 def generator(img_list=None,
               gt_list=None,
-              input_size=512,
+              INPUT_SIZE=512,
               batch_size=32,
               bachground_ratio=0,
               random_scale=np.array([0.5, 0.6, 0.8, 0.85, 0.9, 0.95, 1.0, 1.1, 1.2, 1.4, 1.6, 2, 3, 4])
               ):
+    '''
     原文位置：icdar.py line:823
     :param gt_list:
     :param img_list:
@@ -172,7 +173,7 @@ def generator(img_list=None,
     :param bachground_ratio:
     :param random_scale:
     :return:
-    
+    '''
     max_box_num = 64
     max_box_width = 384
     img_list = np.array(img_list)
@@ -197,7 +198,7 @@ def generator(img_list=None,
         count = 0
         for i in index:
             try:
-                # 读取图片
+                # 读取图片 对一张图片的处理
                 img_fn = img_list[i]
                 img = cv2.imread(img_fn)
                 if img is None:
@@ -216,14 +217,73 @@ def generator(img_list=None,
                 img = cv2.resize(img, dsize=None, fx=rd_scale, fy=rd_scale)
                 file_name = img_fn.split('/')[-1]
                 img = img_aug(img, file_name)
-                print(file_name)
-                print('----------------')
+                text_polys *= rd_scale
+
+                # 对图片进行裁剪
+                img, text_polys, text_tags, selected_poly = crop_area(img, text_polys, text_tags, crop_background=False)
+                if text_polys.shape[0] == 0 or len(text_label) == 0:
+                    continue
+                h, w, _ = img.shape
+                max_h_w_i = np.max([h, w, INPUT_SIZE])
+                img_padded = np.zeros((max_h_w_i, max_h_w_i, 3), dtype=np.uint8)
+                img_padded[:h, :w, :] = img.copy()  # 按照最长边进行padding，边长的最小值是INPUT_SIZE
+                img = img_padded
+                # 把图片resize到512的尺寸
+                new_h, new_w, _ = img.shape
+                img = cv2.resize(img, dsize=(INPUT_SIZE, INPUT_SIZE))
+                resize_ratio_x = INPUT_SIZE / float(new_h)
+                resize_ratio_y = INPUT_SIZE / float(new_w)
+                text_polys[:, :, 0] *= resize_ratio_x
+                text_polys[:, :, 1] *= resize_ratio_y
+                new_h, new_w, _ = img.shape
+
+                # 生成矩形框，这里的矩形是基于四个顶点坐标，带有旋转角度
+                score_map, geo_map, training_mask, rectangles = generate_rbox((new_h, new_w), text_polys, text_tags)
+
+                text_label = [text_label[i] for i in selected_poly]
+                # 文字信息的掩码，如果这个位置有信息就是True, 否则为False
+                mask = [not (word == [-1]) for word in text_label]
+
+                # 过滤掉文字信息为False的标签和矩形框
+                text_label = list(compress(text_label, mask))
+                rectangles = list(compress(rectangles, mask))
+
+                assert len(text_label) == len(rectangles)
+                if len(text_label) == 0:
+                    continue
+
+                boxes_mask = [count] * len(rectangles)
+                count += 1
+                # 以上部分是对一张图片的处理
+
+            # 把一张图片的信息加到一个batch中
+            images.append(img[:, :, ::-1].astype(np.float32))
+            image_fns.append(img_fn)
+            score_maps.append(score_map[::4, ::4, np.newaxis])
+            geo_maps.append(geo_map[::4, ::4, :].astype(np.float32))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             except:
                 print('data reading have something error in DataGenerator.generator')
             break
         break
     return 'ok'
-'''
+
 
 
 def crop_area(img, polys, tags, crop_background=False, max_tries=50):
@@ -403,39 +463,44 @@ def read_img(img_path, gt_path):
     # 生成矩形框，这里的矩形是基于四个顶点坐标，带有旋转角度
     score_map, geo_map, training_mask, rectangles = generate_rbox((new_h, new_w), text_polys, text_tags)
 
-    return img,  # text_polys, text_tags, text_label
+    text_label = [text_label[i] for i in selected_poly]
+    mask = [not (word == [-1]) for word in text_label]
+    text_label = list(compress(text_label, mask))
+    rectangles = list(compress(rectangles, mask))
+    # return img,  # text_polys, text_tags, text_label
+    # return img, score_map, geo_map, training_mask, transform_matrixes, boxes_masks, box_widths, text_labels_sparse
 
 
 if __name__ == '__main__':
     # ------------first method-----
-    df = pd.read_csv('./icdar/train/train.csv')
-    file_paths = df['file_name'].values
-    gt_paths = df['gt'].values
-    ds_train = tf.data.Dataset.from_tensor_slices((file_paths, gt_paths))
-    ds_train = ds_train.map(lambda file_path, gt_path: tf.numpy_function(
-        func=read_img,
-        inp=(file_path, gt_path),
-        Tout=tf.uint8,
-    ))
-
-    # 验证是否正确
-    for i, info in enumerate(ds_train):
-        print(info.shape)
-        plt.imshow(info)
-        plt.show()
-        print('ok')
-        break
+    # df = pd.read_csv('./icdar/train/train.csv')
+    # file_paths = df['file_name'].values
+    # gt_paths = df['gt'].values
+    # ds_train = tf.data.Dataset.from_tensor_slices((file_paths, gt_paths))
+    # ds_train = ds_train.map(lambda file_path, gt_path: tf.numpy_function(
+    #     func=read_img,
+    #     inp=(file_path, gt_path),
+    #     Tout=tf.uint8,
+    # ))
+    #
+    # # 验证是否正确
+    # for i, info in enumerate(ds_train):
+    #     print(info.shape)
+    #     plt.imshow(info)
+    #     plt.show()
+    #     print('ok')
+    #     break
 
     # ----------second method---------------
-    # img_list = open('./icdar/train/images.txt', 'r').readlines()
-    # img_list = [img_mem.strip() for img_mem in img_list]
-    # gt_list = open('./icdar/train/GT.txt', 'r').readlines()
-    # gt_list = [gt_mem.strip() for gt_mem in gt_list]
-    # data_generator = generator(img_list, gt_list)
-    # ds_train = tf.data.Dataset.from_generator(
-    #     data_generator,
-    #     (tf.float32, tf.int64),
-    # )
-    # for img, label in ds_train.take(1):
-    #     print(img)
-    #     print(label)
+    img_list = open('./icdar/train/images.txt', 'r').readlines()
+    img_list = [img_mem.strip() for img_mem in img_list]
+    gt_list = open('./icdar/train/GT.txt', 'r').readlines()
+    gt_list = [gt_mem.strip() for gt_mem in gt_list]
+    data_generator = generator(img_list, gt_list)
+    ds_train = tf.data.Dataset.from_generator(
+        data_generator,
+        (tf.float32, tf.int64),
+    )
+    for img, label in ds_train.take(1):
+        print(img)
+        print(label)
