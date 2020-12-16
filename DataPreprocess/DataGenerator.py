@@ -1,10 +1,11 @@
 '''
 训练数据的生成
 '''
+import math
 import sys
 from itertools import compress
 
-sys.path.append('E:\\algorithm\\ocr')
+sys.path.append('D:\\algorithm\\ocr')
 import numpy as np
 import cv2
 import tensorflow as tf
@@ -278,17 +279,95 @@ def generate_rbox(img_size, polys, tags):
     return score_map, geo_map, training_mask, rectangles
 
 
+def distance_2p(point1, point2):
+    '''
+    计算两点之间的距离
+    :param point1:
+    :param point2:
+    :return:
+    '''
+    return np.sqrt(np.sum((point1 - point2) * (point1 - point2)))
+
+
 def get_project_matrix_and_width(polys):
+    '''
+    计算一个标准矩形和polys之间的仿射矩阵
+    :param polys:
+    :return:
+    '''
     project_matrixes = []
     box_widths = []
-    filter_box_masks = []
-    return 1, 2
+
+    for i in range(polys.shape[0]):  # 矩形框的个数
+        x1, y1, x2, y2, x3, y3, x4, y4 = polys[i] / 2  # ???????????为什么要除以2
+        width = distance_2p(np.array([x1, y1]), np.array([x2, y2]))
+        height = distance_2p(np.array([x1, y1]), np.array([x4, y4]))
+
+        # 两种斜体增强方式，通过改变两条对角线的横坐标
+        ratio = random.uniform(0, 1)
+        if ratio < 0.3 and width > 2 * height:
+            delta = 0.5 * height
+            x1 = x1 - delta
+            x3 = x3 + delta
+        elif ratio < 0.6 and width > 2 * height:
+            delta = 0.5 * height
+            x2 = x2 - delta
+            x4 = x4 + delta
+
+        delta1 = random.uniform(-0.1, 0.1)
+        delta2 = random.uniform(-0.1, 0.1)
+        delta3 = random.uniform(-0.3, 0.3)
+        delta4 = random.uniform(-0.3, 0.3)
+
+        if width > 1.5 * height:  # 宽大于长的情况
+            width_box = math.ceil(8 * width / height)  # math.ceil:返回 >= 参数的最小整数
+            # 对于x1x2保持y坐标的一致，也就是平行于x轴做小范围的长度变化
+            # 对于x1x4保持x坐标的一致，也就是平行于y轴做小范围的长度变化
+            src_pts = np.float32([(x1 + delta3 * height, y1 + delta1 * height),
+                                  (x2 + delta4 * height, y2 + delta1 * height),
+                                  (x4 + delta3 * height, y4 + delta2 * height)])
+        else:
+            # 对于x2x3保持x坐标的一致，也就是平行于y轴做小范围的长度变化
+            # 对于x1x2保持y坐标的一致，也就是平行于x轴做小范围的长度变化
+            width_box = math.ceil(8*height/width)
+            src_pts = np.float32([(x2 + delta2 * width, y2 + delta3 * width),
+                                  (x3 + delta2 * width, y3 + delta4 * width),
+                                  (x1 + delta1 * width, y1 + delta3 * width)])
+        mapped_x1, mapped_y1 = (0, 0)
+        mapped_x4, mapped_y4 = (0, 8)
+        mapped_x2, mapped_y2 = (width_box, 0)
+        dst_pts = np.float32([(mapped_x1, mapped_y1),
+                              (mapped_x2, mapped_y2),
+                              (mapped_x4, mapped_y4)])
+        # 得到从dst_pts到src_pts的仿射矩阵
+        affine_matrix = cv2.getAffineTransform(dst_pts.astype(np.float32), src_pts.astype(np.float32))
+        affine_matrix = affine_matrix.flatten()
+
+        project_matrixes.append(affine_matrix)
+        box_widths.append(width_box)
+    project_matrixes = np.array(project_matrixes)
+    box_widths = np.array(box_widths)
+
+    return project_matrixes, box_widths
+
+
+def sparse_tuple_from(sequences, dtype=np.int32):
+    indices = []
+    values = []
+    for n, seq in enumerate(sequences):
+        indices.extend(zip([n]*len(seq), [i for i in range(len(seq))]))
+        values.extend(seq)
+    indices = np.asarray(indices, dtype=np.int64)
+    values = np.asarray(values, dtype=dtype)
+    shape = np.asarray([len(sequences), np.asarray(indices).max(0)[1]+1], dtype=np.int64)
+
+    return indices, values, shape
 
 
 def generator(img_list=None,
               gt_list=None,
               INPUT_SIZE=512,
-              batch_size=32,
+              batch_size=2,
               bachground_ratio=0,
               random_scale=np.array([0.5, 0.6, 0.8, 0.85, 0.9, 0.95, 1.0, 1.1, 1.2, 1.4, 1.6, 2, 3, 4])
               ):
@@ -310,8 +389,8 @@ def generator(img_list=None,
 
     while True:
         # 打乱数据
-        np.random.shuffle(index)
-        np.random.shuffle(index)
+        # np.random.shuffle(index)
+        # np.random.shuffle(index)
 
         images = []
         image_fns = []
@@ -319,7 +398,7 @@ def generator(img_list=None,
         geo_maps = []
         training_masks = []
 
-        text_ployses = []
+        text_polyses = []
         text_tagses = []
         boxes_masks = []
         text_labels = []
@@ -394,9 +473,9 @@ def generator(img_list=None,
                 score_maps.append(score_map[::4, ::4, np.newaxis])
                 geo_maps.append(geo_map[::4, ::4, :].astype(np.float32))
                 training_masks.append(training_mask[::4, ::4, np.newaxis].astype(np.float32))
-                text_ployses.append(rectangles)
-                boxes_masks.append(boxes_mask)
-                text_labels.append(text_label)
+                text_polyses.append(rectangles)
+                boxes_masks.extend(boxes_mask)
+                text_labels.extend(text_label)
                 text_tagses.append(text_tags)  # 其中False的数量 = len(test_ployses[0])
 
                 # 打印一个image的信息
@@ -406,16 +485,65 @@ def generator(img_list=None,
                 # print(f'score_maps len: {len(score_maps)}, \tscore_maps[0]  shape: {score_maps[0].shape}')
                 # print(f'geo_maps len: {len(geo_maps)}, \tgeo_maps[0]  shape: {geo_maps[0].shape}')
                 # print(f'training_masks len: {len(training_masks)}, \ttraining_masks[0]  shape: {training_masks[0].shape}')
-                # print(f'text_polys len: {len(text_ployses)}, \ttext_polys[0][0] len: {len(text_ployses[0])}')#, \ttext_polys[0] len: {len(test_ployses[0])}')
+                # print(f'text_polyses len: {len(text_polyses)}, \text_polyses[0][0] len: {len(text_polyses[0])}')#, \ttext_polys[0] len: {len(test_ployses[0])}')
                 # print(f'boxes_masks len: {len(boxes_masks)}, \tboxes_masks[0]: {boxes_masks[0]}')
                 # print(f'text_labels len: {len(text_labels)}, \ttext_labels[0]: {text_labels[0]}')
                 # print(f'text_tagses len: {len(text_tagses)}, \ttext_tagses[0]: {text_tagses[0]}')
 
                 # 如果图片的数量够一个batch_size
-                if len(images) == batch_size:
-                    text_polyses = np.concatenate(text_ployses)
+                if len(images):  # == batch_size:
+                    text_polyses = np.concatenate(text_polyses)
                     text_tagses = np.concatenate(text_tagses)
                     transform_matrixes, box_widths = get_project_matrix_and_width(text_polyses)
+
+                    # 一张图片中每一个矩形框都对应一个仿射矩阵，但是我们限制了一个batch_size中最多的矩形框个数不超过max_box_num
+                    # 如果数量超过了，就随机sample max_box_num个矩形框
+                    num_array = [ni for ni in range(len(transform_matrixes))]  # 所有矩形框的索引
+                    if len(transform_matrixes) > max_box_num:
+                        sub_array = random.sample(num_array, max_box_num)
+                        sub_index = [int(ai in sub_array) for ai in num_array]
+                        del_num = 0
+
+                        # 删除在sample之外或者box_widths过大的矩形框的相关信息
+                        for si in num_array:
+                            if (sub_index[si] == 0) or (box_widths[si-del_num] > max_box_width):
+                                transform_matrixes = np.delete(transform_matrixes, si-del_num, 0)
+                                boxes_masks = np.delete(boxes_masks, si - del_num, 0)
+                                box_widths = np.delete(box_widths, si - del_num, 0)
+                                text_labels = np.delete(text_labels, si - del_num, 0)
+                                del_num += 1
+                    else:
+                        del_num = 0
+                        for si in num_array:
+                            if box_widths[si-del_num] > max_box_width:
+                                transform_matrixes = np.delete(transform_matrixes, si-del_num, 0)
+                                boxes_masks = np.delete(boxes_masks, si - del_num, 0)
+                                box_widths = np.delete(box_widths, si - del_num, 0)
+                                text_labels = np.delete(text_labels, si - del_num, 0)
+                                del_num += 1
+                    # print(np.array(text_labels))
+                    # print(len(transform_matrixes))
+                    text_labels_sparse = sparse_tuple_from(np.array(text_labels))
+                    boxes_masks2 = []
+                    for bi in range(batch_size):
+                        cnt = sum([int(bi == bmi) for bmi in boxes_masks])
+                        if cnt < 1:
+                            boxes_masks2.append(np.array([]))
+                        else:
+                            boxes_masks2.append(np.array([bi] * cnt))
+                    boxes_masks = boxes_masks2
+                    # 打印一个batch_size的信息
+                    print('--------------总结一个batch_size的相关输出--------------')
+                    print(f'images len: {len(images)}, \timage[0] shape: {images[0].shape}')
+                    print(f'image_fns len: {len(image_fns)}, \timage_fns[0] : {image_fns[0]}')
+                    print(f'score_maps len: {len(score_maps)}, \tscore_maps[0]  shape: {score_maps[0].shape}')
+                    print(f'geo_maps len: {len(geo_maps)}, \tgeo_maps[0]  shape: {geo_maps[0].shape}')
+                    print(f'training_masks len: {len(training_masks)}, \ttraining_masks[0]  shape: {training_masks[0].shape}')
+                    print(f'transform_matrixes len: {len(transform_matrixes)}, \transform_matrixes[0][0] len: {len(transform_matrixes[0])}')
+                    print(f'boxes_masks len: {len(boxes_masks)}, \tboxes_masks[0]: {boxes_masks[0]}')
+                    print(f'box_widths len: {len(box_widths)}, \tbox_widths[0]: {box_widths[0]}')
+                    print(f'text_labels_sparse len: {len(text_labels_sparse)}, \ttext_labels_sparse[0] shape: {text_labels_sparse[0].shape}')
+                    print('--------------------******************-------------------')
             except:
                 print('data reading have something error in DataGenerator.generator')
             break
