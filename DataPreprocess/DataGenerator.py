@@ -6,6 +6,7 @@ import sys
 from itertools import compress
 
 sys.path.append('D:\\algorithm\\ocr')
+sys.path.append('E:\\algorithm\\ocr')
 import numpy as np
 import cv2
 import tensorflow as tf
@@ -368,7 +369,7 @@ def sparse_tuple_from(sequences, dtype=np.int32):
 def generator(img_list=None,
               gt_list=None,
               INPUT_SIZE=512,
-              batch_size=1,
+              batch_size=3,
               bachground_ratio=0,
               random_scale=np.array([0.5, 0.6, 0.8, 0.85, 0.9, 0.95, 1.0, 1.1, 1.2, 1.4, 1.6, 2, 3, 4])
               ):
@@ -540,19 +541,19 @@ def generator(img_list=None,
                     # 填充的值为这张图片在batch_size中的索引，如果某张图片没有矩形框那么这个array就是空
                     boxes_masks = boxes_masks2
                     # 打印一个batch_size的信息
-                    # print('--------------总结一个batch_size的相关输出--------------')
-                    # print(f'images len: {len(images)}, \t\t\timage[0] shape: {images[0].shape}')
-                    # print(f'image_fns len: {len(image_fns)}, \t\timage_fns[0] : {image_fns[0]}')
-                    # print(f'score_maps len: {len(score_maps)}, \t\tscore_maps[0]  shape: {score_maps[0].shape}')
-                    # print(f'geo_maps len: {len(geo_maps)}, \t\tgeo_maps[0]  shape: {geo_maps[0].shape}')
-                    # print(f'training_masks len: {len(training_masks)}, \t\ttraining_masks[0]  shape: {training_masks[0].shape}')
-                    # print(f'transform_matrixes len: {len(transform_matrixes)}, \ttransform_matrixes[0][0] len: {len(transform_matrixes[0])}')
-                    # print(f'boxes_masks len: {len(boxes_masks)}, \t\tboxes_masks: {boxes_masks}')
-                    # print(f'box_widths len: {len(box_widths)}, \t\tbox_widths: {box_widths}')
-                    # print(f'text_labels_sparse len: {len(text_labels_sparse)}, \ttext_labels_sparse[0] shape: {text_labels_sparse[0].shape}')
-                    # print(f'--------------------------\ttext_labels_sparse[1] len: {len(text_labels_sparse[1])}')
-                    # print(f'--------------------------\ttext_labels_sparse[2]: {text_labels_sparse[2]}')
-                    # print('--------------------******************-------------------')
+                    print('--------------总结一个batch_size的相关输出--------------')
+                    print(f'images len: {len(images)}, \t\t\timage[0] shape: {images[0].shape}')
+                    print(f'image_fns len: {len(image_fns)}, \t\timage_fns[0] : {image_fns[0]}')
+                    print(f'score_maps len: {len(score_maps)}, \t\tscore_maps[0]  shape: {score_maps[0].shape}')
+                    print(f'geo_maps len: {len(geo_maps)}, \t\tgeo_maps[0]  shape: {geo_maps[0].shape}')
+                    print(f'training_masks len: {len(training_masks)}, \t\ttraining_masks[0]  shape: {training_masks[0].shape}')
+                    print(f'transform_matrixes len: {len(transform_matrixes)}, \ttransform_matrixes[0][0] len: {len(transform_matrixes[0])}')
+                    print(f'boxes_masks len: {len(boxes_masks)}, \t\tboxes_masks: {boxes_masks}')
+                    print(f'box_widths len: {len(box_widths)}, \t\tbox_widths: {box_widths}')
+                    print(f'text_labels_sparse len: {len(text_labels_sparse)}, \ttext_labels_sparse[0] shape: {text_labels_sparse[0].shape}')
+                    print(f'--------------------------\ttext_labels_sparse[1] len: {len(text_labels_sparse[1])}')
+                    print(f'--------------------------\ttext_labels_sparse[2]: {text_labels_sparse[2]}')
+                    print('--------------------******************-------------------')
                     yield images, image_fns, score_maps, geo_maps, training_masks, transform_matrixes, boxes_masks, box_widths, text_labels_sparse
                     images = []
                     image_fns = []
@@ -564,9 +565,11 @@ def generator(img_list=None,
                     boxes_masks = []
                     text_labels = []
                     count = 0
+                    break
             except:
                 print('data reading have something error in DataGenerator.generator')
                 continue
+        break
 
 
 def read_img(img_path, gt_path):
@@ -661,15 +664,17 @@ if __name__ == '__main__':
     gt_list = [gt_mem.strip() for gt_mem in gt_list]
 
     # ----通过tf.data.Dataset.from_generator产生输入数据
-    Generator = generator(img_list, gt_list)
-    dataset = tf.data.Dataset.from_generator(
-        Generator,
-        (list),
-    )
-    for i in dataset.take(1):
-        print(i.shape)
+    # Generator = generator(img_list, gt_list)
+    # dataset = tf.data.Dataset.from_generator(
+    #     Generator,
+    #     (list),
+    # )
+    # for i in dataset.take(1):
+    #     print(i.shape)
+
+
     # ---测试generator的正确性
-    # images, image_fns, score_maps, geo_maps, training_masks, transform_matrixes, boxes_masks, box_widths, text_labels_sparse = generator(img_list, gt_list)
+    images, image_fns, score_maps, geo_maps, training_masks, transform_matrixes, boxes_masks, box_widths, text_labels_sparse = generator(img_list, gt_list)
     # 显示图像
     # plt.figure()
     # plt.subplot(2, 2, 1)
