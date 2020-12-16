@@ -392,13 +392,11 @@ def generator(img_list=None,
         # 打乱数据
         # np.random.shuffle(index)
         # np.random.shuffle(index)
-
         images = []
         image_fns = []
         score_maps = []
         geo_maps = []
         training_masks = []
-
         text_polyses = []
         text_tagses = []
         boxes_masks = []
@@ -477,8 +475,6 @@ def generator(img_list=None,
                 training_masks.append(training_mask[::4, ::4, np.newaxis].astype(np.float32))
                 text_polyses.append(rectangles)
                 boxes_masks.extend(boxes_mask)
-                # print('ggggggggggggggggggg')
-                # print(boxes_masks)
                 text_labels.extend(text_label)
                 text_tagses.append(text_tags)  # 其中False的数量 = len(test_ployses[0])
 
@@ -532,9 +528,8 @@ def generator(img_list=None,
                     #   2. 所有字符串中字符顺序排列后的数字index
                     #   3. 两个数字，前者表示一共有多少个字符串，后者是这些字符串中最常的字符串的len
                     text_labels_sparse = sparse_tuple_from(np.array(text_labels))
+
                     boxes_masks2 = []
-                    print('eeeeeeeeeeeee')
-                    print(boxes_masks)
                     for bi in range(batch_size):
                         cnt = sum([int(bi == bmi) for bmi in boxes_masks])
                         if cnt < 1:
@@ -558,12 +553,20 @@ def generator(img_list=None,
                     # print(f'--------------------------\ttext_labels_sparse[1] len: {len(text_labels_sparse[1])}')
                     # print(f'--------------------------\ttext_labels_sparse[2]: {text_labels_sparse[2]}')
                     # print('--------------------******************-------------------')
-                    return images, image_fns, score_maps, geo_maps, training_masks, transform_matrixes, boxes_masks, box_widths, text_labels_sparse
+                    yield images, image_fns, score_maps, geo_maps, training_masks, transform_matrixes, boxes_masks, box_widths, text_labels_sparse
+                    images = []
+                    image_fns = []
+                    score_maps = []
+                    geo_maps = []
+                    training_masks = []
+                    text_polyses = []
+                    text_tagses = []
+                    boxes_masks = []
+                    text_labels = []
+                    count = 0
             except:
                 print('data reading have something error in DataGenerator.generator')
-            break
-        break
-    return 'ok', 'ok', 'ok', 'ok', 'ok', 'ok', 'ok', 'ok', 'ok'
+                continue
 
 
 def read_img(img_path, gt_path):
@@ -658,8 +661,13 @@ if __name__ == '__main__':
     gt_list = [gt_mem.strip() for gt_mem in gt_list]
 
     # ----通过tf.data.Dataset.from_generator产生输入数据
-    tf.data.Dataset.from_generator()
-
+    Generator = generator(img_list, gt_list)
+    dataset = tf.data.Dataset.from_generator(
+        Generator,
+        (list),
+    )
+    for i in dataset.take(1):
+        print(i.shape)
     # ---测试generator的正确性
     # images, image_fns, score_maps, geo_maps, training_masks, transform_matrixes, boxes_masks, box_widths, text_labels_sparse = generator(img_list, gt_list)
     # 显示图像
