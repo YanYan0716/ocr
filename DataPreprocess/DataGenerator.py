@@ -539,7 +539,7 @@ def generator(img_list=None,
                     print(f'score_maps len: {len(score_maps)}, \tscore_maps[0]  shape: {score_maps[0].shape}')
                     print(f'geo_maps len: {len(geo_maps)}, \tgeo_maps[0]  shape: {geo_maps[0].shape}')
                     print(f'training_masks len: {len(training_masks)}, \ttraining_masks[0]  shape: {training_masks[0].shape}')
-                    print(f'transform_matrixes len: {len(transform_matrixes)}, \transform_matrixes[0][0] len: {len(transform_matrixes[0])}')
+                    print(f'transform_matrixes len: {len(transform_matrixes)}, \ttransform_matrixes[0][0] len: {len(transform_matrixes[0])}')
                     print(f'boxes_masks len: {len(boxes_masks)}, \tboxes_masks[0]: {boxes_masks[0]}')
                     print(f'box_widths len: {len(box_widths)}, \tbox_widths[0]: {box_widths[0]}')
                     print(f'text_labels_sparse len: {len(text_labels_sparse)}, \ttext_labels_sparse[0] shape: {text_labels_sparse[0].shape}')
