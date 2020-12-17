@@ -20,7 +20,7 @@ if __name__ == '__main__':
     img = tf.expand_dims(img, axis=0)
     print(f'img shape: {img.shape}')
 
-    # 网络预测过程
+    # 搭建Detect网络
     weight_dir = './model_weights/efficientnetb0/efficientnetb0_notop.h5'
     detectmodel = Detect_model(trainable=False, base_weights_dir=weight_dir).model()
     for i in range(len(detectmodel.layers)):
