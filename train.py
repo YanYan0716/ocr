@@ -6,6 +6,7 @@ import tensorflow as tf
 
 
 from Module.DetectBackbone import Detect_model
+from Module.RoiRotate import RoiRotate
 
 if __name__ == '__main__':
     # 获取一张图片
@@ -23,8 +24,9 @@ if __name__ == '__main__':
     # 搭建Detect网络
     weight_dir = './model_weights/efficientnetb0/efficientnetb0_notop.h5'
     detectmodel = Detect_model(trainable=False, base_weights_dir=weight_dir).model()
-    for i in range(len(detectmodel.layers)):
-        print(detectmodel.layers[i])
+
+    # for i in range(len(detectmodel.layers)):
+    #     print(detectmodel.layers[i])
     # for j in range(4):
     #     x = detectmodel.predict_step(img)
     #     for i in range(len(x)):
