@@ -28,6 +28,6 @@ if __name__ == '__main__':
     # for i in range(len(detectmodel.layers)):
     #     print(detectmodel.layers[i])
     # for j in range(4):
-    #     x = detectmodel.predict_step(img)
-    #     for i in range(len(x)):
-    #         print(x[i].shape)
+    x = detectmodel.predict_step(img)
+    for i in range(len(x)):
+        print(x[i].shape)

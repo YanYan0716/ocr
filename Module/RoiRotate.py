@@ -1,6 +1,11 @@
-import tensorflow as tf
+import sys
 
-import Module.transformer.spatial_transformer_network as transformer
+sys.path.append('D:\\algorithm\\ocr')
+sys.path.append('E:\\algorithm\\ocr')
+import tensorflow as tf
+import numpy as np
+
+from Module.transformer import spatial_transformer_network as transformer
 
 
 class RoiRotate(object):
@@ -25,25 +30,39 @@ class RoiRotate(object):
 
             ex_feature_maps = tf.expand_dims(_feature_map, 0)
             trans_matrix = tf.expand_dims(matrix, 0)
+            # print(f'ex_feature_maps shape: {ex_feature_maps.shape}')
             trans_feature_map = transformer(ex_feature_maps, trans_matrix, [8, box_width])
-            roi = tf.image.crop_and_resize(trans_feature_map,
+            # print(f'trans_feature_map shape: {trans_feature_map.shape}')
+            roi = tf.image.crop_and_resize(trans_feature_map,  # 将每个trans_feature_map resize到[8, box_width]
                                            [[0.0, 0.0, 1.0, 1.0]],
                                            [0],
                                            [8, box_width],
                                            method='nearest',
                                            name='crop')
-            pad_roi = tf.image.pad_to_bounding_box(roi,
+            # print(f'roi shape: {roi.shape}')
+            pad_roi = tf.image.pad_to_bounding_box(roi,  # 将每个roi resize到[8, 384]
                                                    0,
                                                    0,
                                                    8,
                                                    max_width)
+            # print(f'pad_roi shape: {pad_roi.shape}')
             pad_rois = pad_rois.write(tf.cast(i, tf.int32), pad_roi)
             i += 1
             return pad_rois, i
 
         pad_rois, _ = tf.while_loop(cond, body, loop_vars=[pad_rois, i], parallel_iterations=10, swap_memory=True)
-        return pad_rois.stack()
+        pad_rois = pad_rois.stack()
+        return tf.squeeze(pad_rois, axis=1)
 
 
 if __name__ == '__main__':
-        pass
+    shared_features = tf.random.normal([2, 112, 112, 32])
+    input_transform_matrix = tf.random.normal([3, 6])
+    input_box_masks = [np.array([0, 0]), np.array([1])]
+    input_box_widths = [55, 12, 13]
+    ROI = RoiRotate()
+    output = ROI.roi_rotate_tensor_while(shared_features,
+                                         input_transform_matrix,
+                                         input_box_masks,
+                                         input_box_widths)
+    print(output.shape)

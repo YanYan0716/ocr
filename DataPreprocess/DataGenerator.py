@@ -331,7 +331,7 @@ def get_project_matrix_and_width(polys):
         else:
             # 对于x2x3保持x坐标的一致，也就是平行于y轴做小范围的长度变化
             # 对于x1x2保持y坐标的一致，也就是平行于x轴做小范围的长度变化
-            width_box = math.ceil(8*height/width)
+            width_box = math.ceil(8 * height / width)
             src_pts = np.float32([(x2 + delta2 * width, y2 + delta3 * width),
                                   (x3 + delta2 * width, y3 + delta4 * width),
                                   (x1 + delta1 * width, y1 + delta3 * width)])
@@ -357,11 +357,11 @@ def sparse_tuple_from(sequences, dtype=np.int32):
     indices = []
     values = []
     for n, seq in enumerate(sequences):
-        indices.extend(zip([n]*len(seq), [i for i in range(len(seq))]))
+        indices.extend(zip([n] * len(seq), [i for i in range(len(seq))]))
         values.extend(seq)
     indices = np.asarray(indices, dtype=np.int64)
     values = np.asarray(values, dtype=dtype)
-    shape = np.asarray([len(sequences), np.asarray(indices).max(0)[1]+1], dtype=np.int64)
+    shape = np.asarray([len(sequences), np.asarray(indices).max(0)[1] + 1], dtype=np.int64)
 
     return indices, values, shape
 
@@ -369,7 +369,7 @@ def sparse_tuple_from(sequences, dtype=np.int32):
 def generator(img_list=None,
               gt_list=None,
               INPUT_SIZE=512,
-              batch_size=3,
+              batch_size=1,
               bachground_ratio=0,
               random_scale=np.array([0.5, 0.6, 0.8, 0.85, 0.9, 0.95, 1.0, 1.1, 1.2, 1.4, 1.6, 2, 3, 4])
               ):
@@ -507,8 +507,8 @@ def generator(img_list=None,
 
                         # 删除在sample之外或者box_widths过大的矩形框的相关信息
                         for si in num_array:
-                            if (sub_index[si] == 0) or (box_widths[si-del_num] > max_box_width):
-                                transform_matrixes = np.delete(transform_matrixes, si-del_num, 0)
+                            if (sub_index[si] == 0) or (box_widths[si - del_num] > max_box_width):
+                                transform_matrixes = np.delete(transform_matrixes, si - del_num, 0)
                                 boxes_masks = np.delete(boxes_masks, si - del_num, 0)
                                 box_widths = np.delete(box_widths, si - del_num, 0)
                                 text_labels = np.delete(text_labels, si - del_num, 0)
@@ -516,8 +516,8 @@ def generator(img_list=None,
                     else:
                         del_num = 0
                         for si in num_array:
-                            if box_widths[si-del_num] > max_box_width:
-                                transform_matrixes = np.delete(transform_matrixes, si-del_num, 0)
+                            if box_widths[si - del_num] > max_box_width:
+                                transform_matrixes = np.delete(transform_matrixes, si - del_num, 0)
                                 boxes_masks = np.delete(boxes_masks, si - del_num, 0)
                                 box_widths = np.delete(box_widths, si - del_num, 0)
                                 text_labels = np.delete(text_labels, si - del_num, 0)
@@ -546,11 +546,15 @@ def generator(img_list=None,
                     print(f'image_fns len: {len(image_fns)}, \t\timage_fns[0] : {image_fns[0]}')
                     print(f'score_maps len: {len(score_maps)}, \t\tscore_maps[0]  shape: {score_maps[0].shape}')
                     print(f'geo_maps len: {len(geo_maps)}, \t\tgeo_maps[0]  shape: {geo_maps[0].shape}')
-                    print(f'training_masks len: {len(training_masks)}, \t\ttraining_masks[0]  shape: {training_masks[0].shape}')
-                    print(f'transform_matrixes len: {len(transform_matrixes)}, \ttransform_matrixes[0][0] len: {len(transform_matrixes[0])}')
+                    print(
+                        f'training_masks len: {len(training_masks)}, \t\ttraining_masks[0]  shape: {training_masks[0].shape}')
+                    print(
+                        f'transform_matrixes len: {len(transform_matrixes)}, \ttransform_matrixes[0][0] len: {len(transform_matrixes[0])}')
+                    print(transform_matrixes)
                     print(f'boxes_masks len: {len(boxes_masks)}, \t\tboxes_masks: {boxes_masks}')
                     print(f'box_widths len: {len(box_widths)}, \t\tbox_widths: {box_widths}')
-                    print(f'text_labels_sparse len: {len(text_labels_sparse)}, \ttext_labels_sparse[0] shape: {text_labels_sparse[0].shape}')
+                    print(
+                        f'text_labels_sparse len: {len(text_labels_sparse)}, \ttext_labels_sparse[0] shape: {text_labels_sparse[0].shape}')
                     print(f'--------------------------\ttext_labels_sparse[1] len: {len(text_labels_sparse[1])}')
                     print(f'--------------------------\ttext_labels_sparse[2]: {text_labels_sparse[2]}')
                     print('--------------------******************-------------------')
@@ -672,9 +676,9 @@ if __name__ == '__main__':
     # for i in dataset.take(1):
     #     print(i.shape)
 
-
     # ---测试generator的正确性
-    images, image_fns, score_maps, geo_maps, training_masks, transform_matrixes, boxes_masks, box_widths, text_labels_sparse = generator(img_list, gt_list)
+    images, image_fns, score_maps, geo_maps, training_masks, transform_matrixes, boxes_masks, box_widths, text_labels_sparse = generator(
+        img_list, gt_list)
     # 显示图像
     # plt.figure()
     # plt.subplot(2, 2, 1)
