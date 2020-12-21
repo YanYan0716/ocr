@@ -101,10 +101,10 @@ class Recognition_model(keras.Model):
 
 
 if __name__ == '__main__':
-    # roi_tensor = tf.random.normal([3, 8, 384, 32])
-    # reg_model = Recognition_model(lstm_hidden_num=256).model()
-    # x = reg_model.predict_step(roi_tensor)
-    # print(x.shape)
+    roi_tensor = tf.random.normal([3, 8, 384, 32])
+    reg_model = Recognition_model(lstm_hidden_num=256).model()
+    x = reg_model.predict_step(roi_tensor)
+    print(x.shape)
 
 
     '''
@@ -126,20 +126,27 @@ if __name__ == '__main__':
     loss = tf.nn.ctc_loss(labels, logits, label_length=None,logit_length= dd, blank_index=-1)
     print(loss)
     '''
-    import tensorflow as tf
 
-    label = [1, 2, 1]
-    logits = [[0.0, 1.0, 0.0],
-              [0.0, 0.0, 1.0],
-              [0.0, 1.0, 0.0]]
-    labels_length = 3
-    logits_length = 3
 
-    labels_tensor = tf.convert_to_tensor([label], dtype=tf.int32)
-    logits_tensor = tf.convert_to_tensor([logits], dtype=tf.float32)
-    labels_length_tensor = tf.convert_to_tensor([labels_length], dtype=tf.int32)
-    logits_length_tensor = tf.convert_to_tensor([logits_length], dtype=tf.int32)
 
-    loss = tf.nn.ctc_loss(labels_tensor, logits_tensor, labels_length_tensor, logits_length_tensor,
-                          logits_time_major=False)
-    print(loss.numpy()[0])
+    # import tensorflow as tf
+    #
+    # label = [1, 2, 1]
+    # logits = [[0.0, 1.0, 0.0],
+    #           [0.0, 0.0, 1.0],
+    #           [0.0, 1.0, 0.0]]
+    # labels_length = 3
+    # logits_length = 3
+    #
+    #
+    # labels_tensor = tf.convert_to_tensor([label], dtype=tf.int32)
+    # logits_tensor = tf.convert_to_tensor(logits, dtype=tf.float32)
+    # # logits_tensor = tf.transpose(logits_tensor)
+    # logits_tensor = tf.expand_dims(logits_tensor, axis=0)
+    # print(logits_tensor)
+    # labels_length_tensor = tf.convert_to_tensor([labels_length], dtype=tf.int32)
+    # logits_length_tensor = tf.convert_to_tensor([logits_length], dtype=tf.int32)
+    #
+    # loss = tf.nn.ctc_loss(labels_tensor, logits_tensor, labels_length_tensor, logits_length_tensor,
+    #                       logits_time_major=False)
+    # print(loss.numpy())
