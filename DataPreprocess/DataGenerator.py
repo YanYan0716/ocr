@@ -564,7 +564,7 @@ def generator(img_list=None,
                     # print(f'--------------------------\ttext_labels_sparse[1] len: {len(text_labels_sparse[1])}')
                     # print(f'--------------------------\ttext_labels_sparse[2]: {text_labels_sparse[2]}')
                     # print('--------------------******************-------------------')
-                    yield images, #image_fns, score_maps, geo_maps, training_masks, transform_matrixes, boxes_masks, box_widths, text_labels_sparse
+                    yield tf.cast(tf.convert_to_tensor(images), dtype=tf.int32), #image_fns, score_maps, geo_maps, training_masks, transform_matrixes, boxes_masks, box_widths, text_labels_sparse
                     images = []
                     image_fns = []
                     score_maps = []
@@ -578,7 +578,7 @@ def generator(img_list=None,
                     # break
             except:
                 print('data reading have something error in DataGenerator.generator')
-                continue
+                break
         # break
 
 
@@ -676,7 +676,7 @@ if __name__ == '__main__':
     # ----通过tf.data.Dataset.from_generator产生输入数据
     Generator = generator(img_list, gt_list)
     dataset = tf.data.Dataset.from_generator(
-        lambda :generator(),
+        lambda :generator(img_list, gt_list),
         output_types=tf.int32,
     )
 

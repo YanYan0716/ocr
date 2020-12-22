@@ -17,7 +17,7 @@ def generator():
             try:
                 # 读取图片 对一张图片的处理
                 img_fn = img_list[i]
-                img = 1 #cv2.imread(img_fn)
+                img = 1  # cv2.imread(img_fn)
                 images.append(img)
                 if len(images) == batch_size:
                     # print(len(images))
@@ -37,29 +37,30 @@ class DataGen:
         self.batch_size = batch_size
 
     def __load__(self, files_name):
-        print(files_name)
         img = cv2.imread(files_name)
         return img
 
     def getitem(self, index):
         _img = self.__load__(self.image_list[index])
-        return _img
+
+        return _img, self.image_list[index]
 
     def __iter__(self):
         return self
 
     def __next__(self):
         if self.i < self.batch_size:
-            print('next')
-            img_arr = self.getitem(self.i)
+            img_arr, name = self.getitem(self.i)
             self.i += 1
         else:
             raise StopIteration()
-        return img_arr
+        return img_arr, name
 
     def __call__(self):
         self.i = 0
         return self
+
+
 
 
 if __name__ == '__main__':
@@ -73,7 +74,7 @@ if __name__ == '__main__':
     # print(a.shape)
     dataset = tf.data.Dataset.from_generator(
         Generator,
-        (tf.int32),
+        (tf.int32, tf.string),
     )
 
     # for j in range(2):
@@ -81,6 +82,6 @@ if __name__ == '__main__':
     #     for i in dataset:
     #         print(i.shape)
 
-    dataset = dataset.batch(2)
+    dataset = dataset.batch(2).shuffle(buffer_size=1)
     for i in dataset:
-        print(i.shape)
+        print(i[1])
