@@ -1,98 +1,35 @@
-from __future__ import division
-from __future__ import print_function
-import math
-import numpy as np
-
-
-def extendByBlanks(seq, b):
-    "extends a label seq. by adding blanks at the beginning, end and in between each label"
-    res = [b]
-    for s in seq:
-        res.append(s)
-        res.append(b)
-    return res
-
-
-def wordToLabelSeq(w, classes):
-    "map a word to a sequence of labels (indices)"
-    res = [classes.index(c) for c in w]
-    return res
-
-
-def recLabelingProb(t, s, mat, labelingWithBlanks, blank, cache):
-    "recursively compute probability of labeling, save results of sub-problems in cache to avoid recalculating them"
-
-    # check index of labeling
-    if s < 0:
-        return 0.0
-
-    # sub-problem already computed
-    if cache[t][s] != None:
-        return cache[t][s]
-
-    # initial values
-    if t == 0:
-        if s == 0:
-            res = mat[0, blank]
-        elif s == 1:
-            res = mat[0, labelingWithBlanks[1]]
-        else:
-            res = 0.0
-
-        cache[t][s] = res
-        return res
-
-    # recursion on s and t
-    res = (recLabelingProb(t - 1, s, mat, labelingWithBlanks, blank, cache) + recLabelingProb(t - 1, s - 1, mat,
-                                                                                              labelingWithBlanks, blank,
-                                                                                              cache)) * mat[
-              t, labelingWithBlanks[s]]
-
-    # in case of a blank or a repeated label, we only consider s and s-1 at t-1, so we're done
-    if labelingWithBlanks[s] == blank or (s >= 2 and labelingWithBlanks[s - 2] == labelingWithBlanks[s]):
-        cache[t][s] = res
-        return res
-
-    # otherwise, in case of a non-blank and non-repeated label, we additionally add s-2 at t-1
-    res += recLabelingProb(t - 1, s - 2, mat, labelingWithBlanks, blank, cache) * mat[t, labelingWithBlanks[s]]
-    cache[t][s] = res
-    return res
-
-
-def emptyCache(maxT, labelingWithBlanks):
-    "create empty cache"
-    return [[None for _ in range(len(labelingWithBlanks))] for _ in range(maxT)]
-
-
-def ctcLabelingProb(mat, gt, classes):
-    "calculate probability p(gt|mat) of a given labeling gt and a matrix mat according to section 'The CTC Forward-Backward Algorithm' in Graves paper"
-    maxT, _ = mat.shape  # size of input matrix
-    blank = len(classes)  # index of blank label
-    labelingWithBlanks = extendByBlanks(wordToLabelSeq(gt, classes), blank)  # ground truth text as label string extended by blanks
-    cache = emptyCache(maxT, labelingWithBlanks)  # cache subresults to avoid recalculating  subproblems over and over again
-    return recLabelingProb(maxT - 1, len(labelingWithBlanks) - 1, mat, labelingWithBlanks, blank, cache) +\
-           recLabelingProb(maxT - 1, len(labelingWithBlanks) - 2, mat, labelingWithBlanks, blank, cache)
-
-
-def ctcLoss(mat, gt, classes):
-    "calculate CTC loss"
-    try:
-        return -math.log(ctcLabelingProb(mat, gt, classes))
-    except:
-        return float('inf')
-
-
-def testLoss():
-    "test loss"
-    classes = 'ab'
-    mat = np.array([[0.4, 0, 0.6], [0.4, 0, 0.6]])
-    print('Test loss calculation')
-    expected = 0.64
-    actual = ctcLabelingProb(mat, 'a', classes)
-    print('Expected: ' + str(expected))
-    print('Actual: ' + str(actual))
-    print('OK' if expected == actual else 'ERROR')
+import tensorflow as tf
 
 
 if __name__ == '__main__':
-    testLoss()
+    # 假设label_dict={’a':1, 'b':2}
+    # 注意：在tf.nn.ctc_loss中不需要做softmax，因为本身包含这一过程，
+    # 所以如果想笔算loss是否正确应该用下文中a的概率进行计算 其他地方和论文中计算结果相同
+    # 参考资料：https://towardsdatascience.com/intuitively-understanding-connectionist-temporal-classification-3797e43a86c
+    label = [1,2]
+    logits = [[0, 0, 1], [0, 1, 0]]
+
+    label_tensor = tf.convert_to_tensor([label], dtype=tf.int32)
+    logits_tensor = tf.convert_to_tensor([logits], dtype=tf.float32)
+    print(logits_tensor.shape)
+    print(label_tensor.shape)
+
+    a=tf.nn.softmax(logits_tensor)
+    print(a)
+
+    label_length = 2
+    logits_length = 3
+    labels_length_tensor = tf.convert_to_tensor([label_length], dtype=tf.int32)
+    logits_length_tensor = tf.convert_to_tensor([logits_length], dtype=tf.int32)
+    # logit_length = tf.fill([tf.shape(logits_tensor)[0]], tf.shape(logits_tensor)[1])
+    print(logits_length_tensor.shape)
+
+    '''
+    tf.nn.ctc_loss: label_length:由于在每个batch中每个label的长度不是一样的，因此记录了每条数据的label的长度
+                    logit_length:每个time step中的维数，有时候和num_classes是一样的
+                    blank_index:空白的索引，此处空白并不是指空格符号，而是用来确定某个字符是否输出结束的
+    label的第二种实现形式可以是稀疏矩阵，具体实现将在实际代码中
+    '''
+    loss = tf.nn.ctc_loss(label_tensor, logits_tensor, label_length=labels_length_tensor, logit_length= logits_length_tensor,
+                          logits_time_major=False, blank_index=-1)
+    print(loss.numpy())

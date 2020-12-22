@@ -129,24 +129,33 @@ if __name__ == '__main__':
 
 
 
-    # import tensorflow as tf
-    #
-    # label = [1, 2, 1]
-    # logits = [[0.0, 1.0, 0.0],
-    #           [0.0, 0.0, 1.0],
-    #           [0.0, 1.0, 0.0]]
-    # labels_length = 3
-    # logits_length = 3
-    #
-    #
+    import tensorflow as tf
+
+    label1 = 'ab'
+    label2 = 'c'
+    label_matrix = np.array([[0, 0]])
+    value = tf.convert_to_tensor(np.array([0]))
+    shape = tf.cast(tf.convert_to_tensor(np.array([1, 1])), dtype=tf.int64)
+    label_matrix = tf.SparseTensor(tf.cast(tf.convert_to_tensor(label_matrix), dtype=tf.int64),
+                                   values=value,
+                                   dense_shape=shape,)
+
+    logits = np.array([[[0., 0., 1.], [0., 1., 0.]]])
+    a=tf.nn.softmax(logits)
+    print(a)
+
+    # label = [0]
+    # logits = (np.array([[[0.7, 0.3]]]))
+    # labels_length = 1
+    # print(logits.shape)
     # labels_tensor = tf.convert_to_tensor([label], dtype=tf.int32)
-    # logits_tensor = tf.convert_to_tensor(logits, dtype=tf.float32)
-    # # logits_tensor = tf.transpose(logits_tensor)
-    # logits_tensor = tf.expand_dims(logits_tensor, axis=0)
-    # print(logits_tensor)
+    logits_tensor = tf.convert_to_tensor(logits, dtype=tf.float32)
+
+    print(logits_tensor.shape)
     # labels_length_tensor = tf.convert_to_tensor([labels_length], dtype=tf.int32)
-    # logits_length_tensor = tf.convert_to_tensor([logits_length], dtype=tf.int32)
-    #
-    # loss = tf.nn.ctc_loss(labels_tensor, logits_tensor, labels_length_tensor, logits_length_tensor,
-    #                       logits_time_major=False)
-    # print(loss.numpy())
+    logit_length = tf.fill([tf.shape(logits_tensor)[0]], tf.shape(logits_tensor)[1])
+    print(logit_length)
+    loss = tf.nn.ctc_loss(label_matrix, logits_tensor, label_length=None, logit_length= logit_length,
+                          logits_time_major=False, blank_index=tf.convert_to_tensor(2, dtype=tf.int32))
+    # loss = tf.reduce_mean(loss)
+    print(loss.numpy())
