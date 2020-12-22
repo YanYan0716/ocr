@@ -69,9 +69,9 @@ class LstmDecoder(layers.Layer):
         super(LstmDecoder, self).__init__()
         self.lstm_hidden_num = lstm_hidden_num
         self.bilstm = layers.Bidirectional(layers.GRU(units=self.lstm_hidden_num,
-                                                       dropout=0.8,
-                                                       return_state=True,
-                                                       return_sequences=True))
+                                                      dropout=0.8,
+                                                      return_state=True,
+                                                      return_sequences=True))
 
     def call(self, input_tensor):
         output = self.bilstm(input_tensor)
@@ -106,8 +106,6 @@ if __name__ == '__main__':
     x = reg_model.predict_step(roi_tensor)
     print(x.shape)
 
-
-    '''
     logits = tf.zeros([192, 3, 94])
     text_labels_sparse=[]
     a=np.array([0, 0])
@@ -125,37 +123,4 @@ if __name__ == '__main__':
     dd = tf.cast(tf.convert_to_tensor([192, 192, 192]), tf.int32)
     loss = tf.nn.ctc_loss(labels, logits, label_length=None,logit_length= dd, blank_index=-1)
     print(loss)
-    '''
 
-
-
-    import tensorflow as tf
-
-    label1 = 'ab'
-    label2 = 'c'
-    label_matrix = np.array([[0, 0]])
-    value = tf.convert_to_tensor(np.array([0]))
-    shape = tf.cast(tf.convert_to_tensor(np.array([1, 1])), dtype=tf.int64)
-    label_matrix = tf.SparseTensor(tf.cast(tf.convert_to_tensor(label_matrix), dtype=tf.int64),
-                                   values=value,
-                                   dense_shape=shape,)
-
-    logits = np.array([[[0., 0., 1.], [0., 1., 0.]]])
-    a=tf.nn.softmax(logits)
-    print(a)
-
-    # label = [0]
-    # logits = (np.array([[[0.7, 0.3]]]))
-    # labels_length = 1
-    # print(logits.shape)
-    # labels_tensor = tf.convert_to_tensor([label], dtype=tf.int32)
-    logits_tensor = tf.convert_to_tensor(logits, dtype=tf.float32)
-
-    print(logits_tensor.shape)
-    # labels_length_tensor = tf.convert_to_tensor([labels_length], dtype=tf.int32)
-    logit_length = tf.fill([tf.shape(logits_tensor)[0]], tf.shape(logits_tensor)[1])
-    print(logit_length)
-    loss = tf.nn.ctc_loss(label_matrix, logits_tensor, label_length=None, logit_length= logit_length,
-                          logits_time_major=False, blank_index=tf.convert_to_tensor(2, dtype=tf.int32))
-    # loss = tf.reduce_mean(loss)
-    print(loss.numpy())
