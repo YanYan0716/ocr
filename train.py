@@ -13,6 +13,8 @@ from Module.RoiRotate import RoiRotate
 from Module.CustomFit import CustomFit
 
 if __name__ == '__main__':
+    # 构建数据库
+
     # 获取一张图片
     img = 'img.jpg'
 
