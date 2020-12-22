@@ -9,5 +9,7 @@ def recognition_loss(logits, labels, logits_length, label_length):
 
 def decode(logits, seq_len):
     decoded, log_prob = tf.nn.ctc_greedy_decoder(logits, seq_len, merge_repeated=True)
-    dense_decoded = tf.sparse() # 有问题，不对
+    # 有问题。。。。。。。。。
+    a = tf.sparse.SparseTensor(decoded[0])
+    dense_decoded = tf.sparse.to_dense(a, default_value=-1) # 有问题，？？？？？？？？？？？
     return decoded, dense_decoded
