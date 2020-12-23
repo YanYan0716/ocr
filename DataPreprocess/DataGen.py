@@ -366,11 +366,7 @@ def sparse_tuple_from(sequences, dtype=np.int32):
     return indices, values, shape
 
 
-def generator(img_list=None,
-              gt_list=None,
-              INPUT_SIZE=512,
-              batch_size=1,
-              bachground_ratio=0,
+def generator(INPUT_SIZE=512,
               random_scale=np.array([0.5, 0.6, 0.8, 0.85, 0.9, 0.95, 1.0, 1.1, 1.2, 1.4, 1.6, 2, 3, 4])
               ):
     '''
@@ -387,6 +383,8 @@ def generator(img_list=None,
     img_list = [img_mem.strip() for img_mem in img_list]
     gt_list = open('./icdar/train/GT.txt', 'r').readlines()
     gt_list = [gt_mem.strip() for gt_mem in gt_list]
+
+    batch_size = config.BATCH_SIZE
 
     max_box_num = 64
     max_box_width = 384

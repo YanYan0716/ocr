@@ -58,8 +58,11 @@ if __name__ == '__main__':
                                                               transform_matrixes,
                                                               boxes_masks,
                                                               box_widths)
+                print('wwwwwwwwwwwwwwwwwwwwwwww')
+                print(pad_rois.shape)
 
                 recognition_logits = regmodel(pad_rois)
+                print('----------------------')
                 print(recognition_logits.shape)
 
                 DetectLoss = detect_loss(score_maps,
@@ -70,10 +73,9 @@ if __name__ == '__main__':
                 RecognitionLoss = recognition_loss(recognition_logits,
                                           text_labels_sparse_0,
                                           text_labels_sparse_1,
-                                          text_labels_sparse_2,
-                                          config.NUM_CLASSES)
+                                          text_labels_sparse_2,)
 
-                total_loss = DetectLoss + THETA * RecognitionLoss
+                total_loss = DetectLoss + THETA * tf.cast(RecognitionLoss, dtype=tf.float64)
                 print(total_loss)
                 break
             break

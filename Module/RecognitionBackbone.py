@@ -10,6 +10,8 @@ from tensorflow import keras
 from tensorflow.keras import layers, regularizers
 import numpy as np
 
+import config
+
 
 class CNNBlock(layers.Layer):
     def __init__(self, out_channels, cnn_kernel_size=3, pooling_kernel_size=[2, 1]):
@@ -68,16 +70,42 @@ class LstmDecoder(layers.Layer):
     def __init__(self, lstm_hidden_num):
         super(LstmDecoder, self).__init__()
         self.lstm_hidden_num = lstm_hidden_num
-        self.bilstm = layers.Bidirectional(layers.GRU(units=self.lstm_hidden_num,
-                                                      dropout=0.8,
-                                                      return_state=True,
-                                                      return_sequences=True))
+        # self.forward_lstm = layers.GRU(units=self.lstm_hidden_num,
+        #                                dropout=0.8,
+        #                                return_sequences=False,
+        #                                time_major=False,
+        #                                go_backwards=False)
+        #
+        # self.backward_lstm = layers.GRU(units=self.lstm_hidden_num,
+        #                                 dropout=0.8,
+        #                                 return_sequences=False,
+        #                                 time_major=False,
+        #                                 go_backwards=True)
+
+        self.bilstm = layers.Bidirectional(
+            layers.GRU(units=self.lstm_hidden_num,
+                       dropout=0.8,
+                       return_sequences=True,
+                       return_state=False)
+        )
 
     def call(self, input_tensor):
-        output = self.bilstm(input_tensor)
-        infer_output = tf.concat(output, axis=-1)
+        batch_size = tf.shape(input_tensor)[0]
+        lstm_output = self.bilstm(input_tensor)
+        infer_output = tf.reshape(lstm_output, [-1, self.lstm_hidden_num*2])
 
-        return infer_output
+        W = tf.Variable(
+            initial_value=lambda :tf.random.truncated_normal(
+                shape=[self.lstm_hidden_num * 2, config.NUM_CLASSES],
+                stddev=0.1),
+            trainable=True)
+        b = tf.Variable(initial_value=lambda :tf.constant(0., shape=[config.NUM_CLASSES]),
+                        trainable=True)
+
+        logits = tf.add(tf.matmul(infer_output, W), b)
+        logits = tf.reshape(logits, [batch_size, -1, config.NUM_CLASSES])
+        logits = tf.transpose(logits, (1, 0, 2))
+        return logits
         # return output
 
 
@@ -88,6 +116,7 @@ class Recognition_model(keras.Model):
         self.training = training
         self.encoder = CNNEncoder()
         self.decoder = LstmDecoder(lstm_hidden_num=self.lstm_hidden_num)
+
 
     def call(self, roi_fmp):
         a = self.encoder(roi_fmp)
