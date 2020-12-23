@@ -75,10 +75,10 @@ class LstmDecoder(layers.Layer):
 
     def call(self, input_tensor):
         output = self.bilstm(input_tensor)
-        # infer_output = tf.concat(output, axis=-1)
+        infer_output = tf.concat(output, axis=-1)
 
-        # return infer_output
-        return output
+        return infer_output
+        # return output
 
 
 class Recognition_model(keras.Model):
