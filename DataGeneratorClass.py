@@ -3,34 +3,10 @@ import tensorflow as tf
 import numpy as np
 import cv2
 
-
-def generator():
-    img_list = open('./icdar/train/images.txt', 'r').readlines()
-    batch_size = 4
-    img_list = [img_mem.strip() for img_mem in img_list]
-    img_list = np.array(img_list)
-    index = np.arange(0, img_list.shape[0])
-
-    if True:
-        images = []
-        for i in index:
-            try:
-                # 读取图片 对一张图片的处理
-                img_fn = img_list[i]
-                img = 1  # cv2.imread(img_fn)
-                images.append(img)
-                if len(images) == batch_size:
-                    # print(len(images))
-                    yield images
-                images = []
-            except:
-                print('data reading have something error in DataGenerator.generator')
-                break
-                # continue
-        # break
-
-
 class DataGen:
+    '''
+    如何使用类来构建数据库，但是在程序中没有使用这种方法
+    '''
     def __init__(self, image_list, batch_size=4):
         self.i = 0
         self.image_list = image_list
