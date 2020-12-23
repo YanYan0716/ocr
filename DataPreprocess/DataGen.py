@@ -469,9 +469,6 @@ def generator(img_list=None,
             count += 1
             # 以上部分是对一张图片的处理
 
-            # yield tf.cast(tf.convert_to_tensor(img[:, :, ::-1].astype(np.float32)), dtype=tf.float32),\
-            #       tf.cast(img_fn, dtype=tf.string)
-
             # 把一张图片的信息加到一个batch中
             images.append(img[:, :, ::-1].astype(np.float32))
             image_fns.append(img_fn)
@@ -483,18 +480,6 @@ def generator(img_list=None,
             boxes_masks.extend(boxes_mask)
             text_labels.extend(text_label)
             text_tagses.append(text_tags)  # 其中False的数量 = len(test_ployses[0])
-
-            # 打印一个image的信息
-            # print('--------------总结一个image的相关输出--------------')
-            # print(f'images len: {len(images)}, \timage[0] shape: {images[0].shape}')
-            # print(f'image_fns len: {len(image_fns)}, \timage_fns[0] : {image_fns[0]}')
-            # print(f'score_maps len: {len(score_maps)}, \tscore_maps[0]  shape: {score_maps[0].shape}')
-            # print(f'geo_maps len: {len(geo_maps)}, \tgeo_maps[0]  shape: {geo_maps[0].shape}')
-            # print(f'training_masks len: {len(training_masks)}, \ttraining_masks[0]  shape: {training_masks[0].shape}')
-            # print(f'text_polyses len: {len(text_polyses)}, \text_polyses[0][0] len: {len(text_polyses[0])}')#, \ttext_polys[0] len: {len(test_ployses[0])}')
-            # print(f'boxes_masks len: {len(boxes_masks)}, \tboxes_masks[0]: {boxes_masks[0]}')
-            # print(f'text_labels len: {len(text_labels)}, \ttext_labels[0]: {text_labels[0]}')
-            # print(f'text_tagses len: {len(text_tagses)}, \ttext_tagses[0]: {text_tagses[0]}')
 
             # 如果图片的数量够一个batch_size
             if len(images) == batch_size:
@@ -539,31 +524,30 @@ def generator(img_list=None,
                 for bi in range(batch_size):
                     cnt = sum([int(bi == bmi) for bmi in boxes_masks])
                     if cnt < 1:
-                        boxes_masks2.append(np.array([]))
+                        boxes_masks2.append(-1)
                     else:
-                        boxes_masks2.append(np.array([bi] * cnt))
+                        for i in range(cnt):
+                            boxes_masks2.append(bi)
                 # boxes_masks长度为batch_size，每一个元素是一个array，长度为本张图片的矩形框个数，
                 # 填充的值为这张图片在batch_size中的索引，如果某张图片没有矩形框那么这个array就是空
-                boxes_masks = boxes_masks2
-                # 打印一个batch_size的信息
-                # print('--------------总结一个batch_size的相关输出--------------')
-                # print(f'images len: {len(images)}, \t\t\timage[0] shape: {images[0].shape}')
-                # print(f'image_fns len: {len(image_fns)}, \t\timage_fns[0] : {image_fns[0]}')
-                # print(f'score_maps len: {len(score_maps)}, \t\tscore_maps[0]  shape: {score_maps[0].shape}')
-                # print(f'geo_maps len: {len(geo_maps)}, \t\tgeo_maps[0]  shape: {geo_maps[0].shape}')
-                # print(
-                #     f'training_masks len: {len(training_masks)}, \t\ttraining_masks[0]  shape: {training_masks[0].shape}')
-                # print(
-                #     f'transform_matrixes len: {len(transform_matrixes)}, \ttransform_matrixes[0][0] len: {len(transform_matrixes[0])}')
-                # print(transform_matrixes)
-                # print(f'boxes_masks len: {len(boxes_masks)}, \t\tboxes_masks: {boxes_masks}')
-                # print(f'box_widths len: {len(box_widths)}, \t\tbox_widths: {box_widths}')
-                # print(
-                #     f'text_labels_sparse len: {len(text_labels_sparse)}, \ttext_labels_sparse[0] shape: {text_labels_sparse[0].shape}')
-                # print(f'--------------------------\ttext_labels_sparse[1] len: {len(text_labels_sparse[1])}')
-                # print(f'--------------------------\ttext_labels_sparse[2]: {text_labels_sparse[2]}')
-                # print('--------------------******************-------------------')
-                yield tf.cast(tf.convert_to_tensor(images), dtype=tf.int32), #image_fns, score_maps, geo_maps, training_masks, transform_matrixes, boxes_masks, box_widths, text_labels_sparse
+                boxes_masks = np.array(boxes_masks2)
+
+                text_labels_sparse_0 = text_labels_sparse[0]
+                text_labels_sparse_1 = text_labels_sparse[1]
+                text_labels_sparse_2 = text_labels_sparse[2]
+
+                yield tf.cast(tf.convert_to_tensor(images), dtype=tf.float32), \
+                      tf.cast(tf.convert_to_tensor(image_fns), dtype=tf.string), \
+                      tf.cast(tf.convert_to_tensor(score_maps), dtype=tf.int32), \
+                      tf.cast(tf.convert_to_tensor(geo_maps), dtype=tf.int32), \
+                      tf.cast(tf.convert_to_tensor(training_masks), dtype=tf.int32), \
+                      tf.cast(tf.convert_to_tensor(transform_matrixes), dtype=tf.float32), \
+                      tf.cast(tf.convert_to_tensor(boxes_masks), dtype=tf.int32), \
+                      tf.cast(tf.convert_to_tensor(box_widths), dtype=tf.int32), \
+                      tf.cast(tf.convert_to_tensor(text_labels_sparse_0), dtype=tf.int32),\
+                      tf.cast(tf.convert_to_tensor(text_labels_sparse_1), dtype=tf.int32),\
+                      tf.cast(tf.convert_to_tensor(text_labels_sparse_2), dtype=tf.int32)
+
                 images = []
                 image_fns = []
                 score_maps = []
@@ -574,144 +558,56 @@ def generator(img_list=None,
                 boxes_masks = []
                 text_labels = []
                 count = 0
-
         except:
             print('data reading have something error in DataGenerator.generator')
-            continue
-
-
-def read_img(img_path, gt_path):
-    '''
-    改写generator函数，以适应tf.data.Dataset.from_tensor_slices
-    :param img_path:
-    :param gt_path:
-    :return:
-    '''
-    RANDOM_SCALE = np.array([0.5, 0.6, 0.8, 0.85, 0.9, 0.95, 1.0, 1.1, 1.2, 1.4, 1.6, 2, 3, 4])
-    MAX_BOX_NUM = 64
-    MAX_BOX_WIDTH = 384
-    INPUT_SIZE = 512
-
-    # 读取图片
-    img = tf.io.read_file(img_path)
-    img = tf.image.decode_jpeg(img, channels=3)  # tf和cv2的通道格式是不一样的
-
-    img = cv2.cvtColor(img.numpy(), cv2.COLOR_RGB2BGR)
-    h, w, _ = img.shape
-
-    # 读取图片对应的GT.txt文件, 返回的数据类型：np.array, np.array, list
-    # text_polys: 文字坐标框
-    # text_tags: 标志位，有文字是False，没有是True
-    # text_label: 文字内容
-    text_polys, text_tags, text_label = load_annoatation(gt_path)
-
-    # 检查获取到的矩形框四个顶点的顺序对不对，过滤掉面积为0的情况
-    text_polys, text_tags = check_and_validate_polys(text_polys, text_tags, h, w)
-
-    # 对图片进行缩放、通道变换等操作 所以矩形框也要按照同比例缩放 此过程未涉及图像crop
-    rd_scale = np.random.choice(RANDOM_SCALE)  # 随机选一个scale
-    img = cv2.resize(img, dsize=None, fx=rd_scale, fy=rd_scale)
-    img = img_aug(img)
-    text_polys *= rd_scale
-
-    # 对图片进行裁剪
-    flag_num = 0
-    img, text_polys, text_tags, selected_poly = crop_area(img, text_polys, text_tags, crop_background=False)
-    while (text_polys.shape[0] == 0 or len(text_label) == 0) and flag_num < 50:
-        flag_num += 1
-        img, text_polys, text_tags, selected_poly = crop_area(img, text_polys, text_tags, crop_background=False)
-    h, w, _ = img.shape
-    max_h_w_i = np.max([h, w, INPUT_SIZE])
-    img_padded = np.zeros((max_h_w_i, max_h_w_i, 3), dtype=np.uint8)
-    img_padded[:h, :w, :] = img.copy()  # 按照最长边进行padding，边长的最小值是INPUT_SIZE
-    img = img_padded
-    # 把图片resize到512的尺寸
-    new_h, new_w, _ = img.shape
-    img = cv2.resize(img, dsize=(INPUT_SIZE, INPUT_SIZE))
-    resize_ratio_x = INPUT_SIZE / float(new_h)
-    resize_ratio_y = INPUT_SIZE / float(new_w)
-    text_polys[:, :, 0] *= resize_ratio_x
-    text_polys[:, :, 1] *= resize_ratio_y
-    new_h, new_w, _ = img.shape
-
-    # 生成矩形框，这里的矩形是基于四个顶点坐标，带有旋转角度
-    score_map, geo_map, training_mask, rectangles = generate_rbox((new_h, new_w), text_polys, text_tags)
-
-    text_label = [text_label[i] for i in selected_poly]
-    mask = [not (word == [-1]) for word in text_label]
-    text_label = list(compress(text_label, mask))
-    rectangles = list(compress(rectangles, mask))
-    # return img,  # text_polys, text_tags, text_label
-    # return img, score_map, geo_map, training_mask, transform_matrixes, boxes_masks, box_widths, text_labels_sparse
+            break
 
 
 if __name__ == '__main__':
-    # ------------first method-----
-    # df = pd.read_csv('./icdar/train/train.csv')
-    # file_paths = df['file_name'].values
-    # gt_paths = df['gt'].values
-    # ds_train = tf.data.Dataset.from_tensor_slices((file_paths, gt_paths))
-    # ds_train = ds_train.map(lambda file_path, gt_path: tf.numpy_function(
-    #     func=read_img,
-    #     inp=(file_path, gt_path),
-    #     Tout=tf.uint8,
-    # ))
-    #
-    # # 验证是否正确
-    # for i, info in enumerate(ds_train):
-    #     print(info.shape)
-    #     plt.imshow(info)
-    #     plt.show()
-    #     print('ok')
-    #     break
-
-    # ----------second method---------------
     img_list = open('./icdar/train/images.txt', 'r').readlines()
     img_list = [img_mem.strip() for img_mem in img_list]
     gt_list = open('./icdar/train/GT.txt', 'r').readlines()
     gt_list = [gt_mem.strip() for gt_mem in gt_list]
 
     # ----通过tf.data.Dataset.from_generator产生输入数据
-    # Generator = generator(img_list, gt_list)
+    Generator = generator(img_list, gt_list)
+
     dataset = tf.data.Dataset.from_generator(
-        generator,
-        (tf.float32, tf.string),
-    ).batch(4)
+        generator=generator,
+        output_types=(
+            tf.float32, tf.string, tf.int32, tf.int32, tf.int32, tf.float32, tf.int32, tf.int32, tf.int32, tf.int32, tf.int32,
+        ),
+    )
 
-    # itera=dataset.make_one_shot_iterator()
-    # x = next(dataset)
-    # print(x.shape)
     for i in range(2):
-        print('aaaaaaaaaaaaaaaaaa')
-        for batch, (x,y) in enumerate(dataset):
-            print(y)
+        print('**************************')
+        for batch, (images, \
+                    image_fns, \
+                    score_maps, \
+                    geo_maps, \
+                    training_masks, \
+                    transform_matrixes, \
+                    boxes_masks, \
+                    box_widths, \
+                    text_labels_sparse_0, \
+                    text_labels_sparse_1, \
+                    text_labels_sparse_2
+                    ) in enumerate(dataset):
+            # 打印一个batch_size的信息
+            print('--------------总结一个batch_size的相关输出--------------')
+            print(f'images shape\t\t\t: {images.shape}')
+            print(f'image_fns shape\t\t\t: {image_fns.shape}')
+            print(f'score_maps shape\t\t: {score_maps.shape}')
+            print(f'geo_maps shape\t\t\t: {geo_maps.shape}')
+            print(f'training_masks shape\t\t: {training_masks.shape}')
+            print(f'transform_matrixes shape\t: {transform_matrixes.shape}')
+            print(f'boxes_masks shape\t\t: {boxes_masks.shape}')
+            print(f'box_widths shape\t\t: {box_widths.shape}')
+            print(f'text_labels_sparse_0 shape\t: {text_labels_sparse_0.shape}')
+            print(f'text_labels_sparse_1 shape\t: {text_labels_sparse_1.shape}')
+            print(f'text_labels_sparse_2 shape\t: {text_labels_sparse_2.shape}')
+            # print(f'text_labels_sparse_0: {text_labels_sparse_0}')
+            # print(f'text_labels_sparse_2: {text_labels_sparse_2}')
+            print(f'image_fns: {image_fns}')
 
-    # ---测试generator的正确性
-    # images, image_fns, score_maps, geo_maps, training_masks, transform_matrixes, boxes_masks, box_widths, text_labels_sparse = generator(
-    #     img_list, gt_list)
-    # 显示图像
-    # plt.figure()
-    # plt.subplot(2, 2, 1)
-    # plt.title('image')
-    # plt.imshow(images[0][::4, ::4,:]/255.)
-    # plt.subplot(2, 2, 2)
-    # plt.title('score_maps')
-    # plt.set_cmap('binary')
-    # plt.imshow(score_maps[0])
-    # plt.subplot(2, 2, 3)
-    # plt.title('training_mask')
-    # plt.set_cmap('binary')
-    # plt.imshow(training_masks[0])
-    # plt.show()
-    # 显示真实的标签信息
-    # number = 0
-    # text_info = ''
-    # for i in range(len(text_labels_sparse[1])):
-    #     str_index = text_labels_sparse[1][i]
-    #     text_info += (config.CHAR_VECTOR[str_index])
-    # print('------文字部分的标签信息可视化----------')
-    # print(f'每一个字符对应的索引: {text_labels_sparse[1]}')
-    # print(f'对应的索引转化为字符: {text_info}')
-    # '''
-    # 暂时不清楚boxes_widths的作用，大概和RoiRotate有关系，存疑？？？？？？？？？？？？？？？？？
-    # '''
+

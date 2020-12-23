@@ -92,7 +92,7 @@ class Recognition_model(keras.Model):
     def call(self, roi_fmp):
         a = self.encoder(roi_fmp)
         a = tf.squeeze(a, axis=1)
-        # a = self.decoder(a)
+        a = self.decoder(a)
         return a
 
     def model(self):

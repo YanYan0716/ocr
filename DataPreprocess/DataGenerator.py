@@ -706,6 +706,3 @@ if __name__ == '__main__':
     print('------文字部分的标签信息可视化----------')
     print(f'每一个字符对应的索引: {text_labels_sparse[1]}')
     print(f'对应的索引转化为字符: {text_info}')
-    # '''
-    # 暂时不清楚boxes_widths的作用，大概和RoiRotate有关系，存疑？？？？？？？？？？？？？？？？？
-    # '''
