@@ -20,10 +20,19 @@ class RotateMyLayer(layers.Layer):
         rois = []
         max_width = 384
         max_roi_num = 10
+
+        # INDEX = tf.minimum(max_roi_num, box_num)
+        # print(INDEX)
+        # _feature_map = feature_map
+        # trans_feature_map = transformer(_feature_map, transform_matrixs)# box_widths[:INDEX])
+        # print('ok')
+
+
+        pad_rois = tf.TensorArray(tf.float32, size=0, dynamic_size=True, clear_after_read=True)
         for i in range(tf.minimum(max_roi_num, box_num)):
             index = box_masks[i]
             matrix = transform_matrixs[i]
-            _feature_map = feature_map[tf.cast(index, tf.int32)]
+            _feature_map = feature_map[index]
             ex_feature_maps = tf.expand_dims(_feature_map, 0)
             trans_matrix = tf.expand_dims(matrix, 0)
             trans_feature_map = transformer(ex_feature_maps, trans_matrix, [8, box_widths[i]])
@@ -39,18 +48,15 @@ class RotateMyLayer(layers.Layer):
                                                    0,
                                                    8,
                                                    max_width)
-
-            rois.append(pad_roi)
-        # qwe = tf.convert_to_tensor(np.array(rois, dtype=np.float))
-        print('***************')
-        # return tf.squeeze(rois, axis=1)
-        # # print('ok')
-        return feature_map
+            pad_rois = pad_rois.write(i, pad_roi)
+            # pad_rois[i].assign(pad_roi)
+        pad_rois = tf.squeeze(pad_rois.stack(), axis=1)
+        return pad_rois
 
 
-class mymodel(keras.Model):
+class RotateModel(keras.Model):
     def __init__(self):
-        super(mymodel, self).__init__()
+        super(RotateModel, self).__init__()
         self.layer = RotateMyLayer()
 
     def call(self, shared_features, input_transform_matrix, input_box_masks, input_box_widths):
@@ -72,7 +78,7 @@ if __name__ == '__main__':
     input_transform_matrix = tf.random.normal([3, 6])
     input_box_masks = tf.convert_to_tensor([0, 0, 1])
     input_box_widths = tf.convert_to_tensor([55, 12, 13])
-    model = mymodel()
+    model = RotateModel()
 
     output = model(shared_features, input_transform_matrix, input_box_masks, input_box_widths)
     print(output.shape)

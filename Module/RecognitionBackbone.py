@@ -100,33 +100,32 @@ class Recognition_model(keras.Model):
     def __init__(self, lstm_hidden_num):
         super(Recognition_model, self).__init__()
         self.lstm_hidden_num = lstm_hidden_num
-        self.rotatemyLayer = RotateMyLayer()
         self.encoder = CNNEncoder()
         self.decoder = LstmDecoder(lstm_hidden_num=self.lstm_hidden_num)
 
-    def call(self, shared_features, input_transform_matrix, input_box_masks, input_box_widths):
-        roi_fmp = self.rotatemyLayer(shared_features, input_transform_matrix, input_box_masks, input_box_widths)
+    def call(self, roi_fmp):
         a = self.encoder(roi_fmp)
         a = tf.squeeze(a, axis=1)
         a = self.decoder(a)
         return a
 
     def model(self):
-        input1 = keras.Input(shape=[None, None, 32])
-        input2 = keras.Input(shape=[None, 6])
-        input3 = keras.Input(shape=[None])
-        input4 = keras.Input(shape=[None])
-        return keras.Model((input1, input2, input3, input4), self.call(input1, input2, input3, input4))
+        input1 = keras.Input(shape=(None, None, 32))
+        return keras.Model(inputs=[input1], outputs=self.call(input1))
 
 
 if __name__ == '__main__':
-    shared_features = tf.random.normal([2, 112, 112, 32])
-    input_transform_matrix = tf.random.normal([3, 6])
-    input_box_masks = tf.convert_to_tensor([0, 0, 1])
-    input_box_widths = tf.convert_to_tensor([55, 12, 13])
+    shared_features = tf.random.normal([3, 8, 384, 32])
+    # input_transform_matrix = tf.random.normal([3, 6])
+    # input_box_masks = tf.convert_to_tensor([0, 0, 1])
+    # input_box_widths = tf.convert_to_tensor([55, 12, 13])
+    # print(input_box_masks.shape)
 
-    reg_model = Recognition_model(lstm_hidden_num=256)
-    x = reg_model(shared_features, input_transform_matrix, input_box_masks, input_box_widths)
+    reg_model = Recognition_model(lstm_hidden_num=256).model()
+    # for layer in reg_model.layers:
+    #     print(layer.trainable)
+    # print(len(reg_model.trainable_weights))
+    x = reg_model(shared_features)
     print(x.shape)
     #
     # logits = tf.zeros([192, 3, 94])

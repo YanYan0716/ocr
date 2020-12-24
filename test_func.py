@@ -1,5 +1,6 @@
 import os
 
+from Module.RRotateLayer import RotateModel
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import tensorflow as tf
@@ -32,15 +33,13 @@ if __name__ == '__main__':
 
     # 搭建Detect网络
     weight_dir = './model_weights/efficientnetb0/efficientnetb0_notop.h5'
-    detectmodel = Detect_model(base_weights_dir=weight_dir)
+    detectmodel = Detect_model(base_weights_dir=weight_dir).model()
 
     # 加入roi_rotate
-    # roi_rotate = RoiRotate()
+    rotatemodel = RotateModel()
 
     # 搭建Recognition网络
-    regmodel = Recognition_model(lstm_hidden_num=256)
-
-
+    regmodel = Recognition_model(lstm_hidden_num=256).model()
 
     # 定义损失函数
     # detectloss = detect_loss()
@@ -67,32 +66,30 @@ if __name__ == '__main__':
                     text_labels_sparse_0, text_labels_sparse_1, text_labels_sparse_2) in enumerate(dataset):
             with tf.GradientTape() as tape:
                 shared_feature, f_score, f_geometry = detectmodel(images)
-                # pad_rois = roi_rotate.roi_rotate_tensor_while(shared_feature,
-                #                                               transform_matrixes,
-                #                                               boxes_masks,
-                #                                               box_widths)
+                pad_rois = rotatemodel(shared_feature,
+                                      transform_matrixes,
+                                      boxes_masks,
+                                      box_widths)
                 print('-----------------')
-                recognition_logits = regmodel(shared_feature,
-                                              transform_matrixes,
-                                              boxes_masks,
-                                              box_widths)
-
+                recognition_logits = regmodel(pad_rois)
+                print(recognition_logits.shape)
                 DetectLoss = detect_loss(score_maps,
                                          tf.cast(f_score, tf.int32),
                                          geo_maps,
                                          tf.cast(f_geometry, tf.int32),
                                          tf.cast(training_masks, tf.int32))
+                print(f'DetectLoss: {DetectLoss}')
                 RecognitionLoss = recognition_loss(recognition_logits,
                                                    text_labels_sparse_0,
                                                    text_labels_sparse_1,
                                                    text_labels_sparse_2, )
-
+                print(f'RecognitionLoss: {RecognitionLoss}')
                 total_loss = DetectLoss + THETA * tf.cast(RecognitionLoss, dtype=tf.float64)
                 # 反向传播
                 # grad = tape.gradient(total_loss, trainable_weights)
                 # optim.apply_gradients(zip(grad, trainable_weights))
 
-                print(total_loss)
+                # print(total_loss)
                 break
             break
         break
