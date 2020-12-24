@@ -10,7 +10,7 @@ from Module.DetectLoss import detect_loss
 from Module.RecognitionBackbone import Recognition_model
 from Module.RecognitionLoss import recognition_loss
 from Module.DetectBackbone import Detect_model
-from Module.RoiRotate import RoiRotate
+# from Module.RoiRotate import RoiRotate
 from DataPreprocess.DataGen import generator
 import config
 
@@ -32,13 +32,13 @@ if __name__ == '__main__':
 
     # 搭建Detect网络
     weight_dir = './model_weights/efficientnetb0/efficientnetb0_notop.h5'
-    detectmodel = Detect_model(base_weights_dir=weight_dir).model()
+    detectmodel = Detect_model(base_weights_dir=weight_dir)
 
     # 加入roi_rotate
-    roi_rotate = RoiRotate()
+    # roi_rotate = RoiRotate()
 
     # 搭建Recognition网络
-    regmodel = Recognition_model(lstm_hidden_num=256).model()
+    regmodel = Recognition_model(lstm_hidden_num=256)
 
 
 
@@ -67,11 +67,15 @@ if __name__ == '__main__':
                     text_labels_sparse_0, text_labels_sparse_1, text_labels_sparse_2) in enumerate(dataset):
             with tf.GradientTape() as tape:
                 shared_feature, f_score, f_geometry = detectmodel(images)
-                pad_rois = roi_rotate.roi_rotate_tensor_while(shared_feature,
-                                                              transform_matrixes,
-                                                              boxes_masks,
-                                                              box_widths)
-                recognition_logits = regmodel(pad_rois)
+                # pad_rois = roi_rotate.roi_rotate_tensor_while(shared_feature,
+                #                                               transform_matrixes,
+                #                                               boxes_masks,
+                #                                               box_widths)
+                print('-----------------')
+                recognition_logits = regmodel(shared_feature,
+                                              transform_matrixes,
+                                              boxes_masks,
+                                              box_widths)
 
                 DetectLoss = detect_loss(score_maps,
                                          tf.cast(f_score, tf.int32),

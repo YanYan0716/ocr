@@ -11,6 +11,7 @@ from tensorflow.keras import layers, regularizers
 import numpy as np
 
 import config
+from Module.RRotateLayer import RotateMyLayer
 
 
 class CNNBlock(layers.Layer):
@@ -32,9 +33,7 @@ class CNNBlock(layers.Layer):
         self.pooling = layers.MaxPool2D(pool_size=pooling_kernel_size, strides=[2, 1], padding='same')
 
     def call(self, inputs, training=False):
-        # print(f'inputs shape :{inputs.shape}')
         x = self.conv1(inputs)
-        # print(f'x shape :{x.shape}')
         x = self.bn(x)
         x = self.conv2(x)
         x = self.pooling(x)
@@ -70,18 +69,6 @@ class LstmDecoder(layers.Layer):
     def __init__(self, lstm_hidden_num):
         super(LstmDecoder, self).__init__()
         self.lstm_hidden_num = lstm_hidden_num
-        # self.forward_lstm = layers.GRU(units=self.lstm_hidden_num,
-        #                                dropout=0.8,
-        #                                return_sequences=False,
-        #                                time_major=False,
-        #                                go_backwards=False)
-        #
-        # self.backward_lstm = layers.GRU(units=self.lstm_hidden_num,
-        #                                 dropout=0.8,
-        #                                 return_sequences=False,
-        #                                 time_major=False,
-        #                                 go_backwards=True)
-
         self.bilstm = layers.Bidirectional(
             layers.GRU(units=self.lstm_hidden_num,
                        dropout=0.8,
@@ -110,46 +97,53 @@ class LstmDecoder(layers.Layer):
 
 
 class Recognition_model(keras.Model):
-    def __init__(self, lstm_hidden_num, training=False):
+    def __init__(self, lstm_hidden_num):
         super(Recognition_model, self).__init__()
         self.lstm_hidden_num = lstm_hidden_num
-        self.training = training
+        self.rotatemyLayer = RotateMyLayer()
         self.encoder = CNNEncoder()
         self.decoder = LstmDecoder(lstm_hidden_num=self.lstm_hidden_num)
 
-
-    def call(self, roi_fmp):
+    def call(self, shared_features, input_transform_matrix, input_box_masks, input_box_widths):
+        roi_fmp = self.rotatemyLayer(shared_features, input_transform_matrix, input_box_masks, input_box_widths)
         a = self.encoder(roi_fmp)
         a = tf.squeeze(a, axis=1)
         a = self.decoder(a)
         return a
 
     def model(self):
-        x = keras.Input(shape=[None, None, 32])
-        return keras.Model(inputs=[x], outputs=self.call(x))
+        input1 = keras.Input(shape=[None, None, 32])
+        input2 = keras.Input(shape=[None, 6])
+        input3 = keras.Input(shape=[None])
+        input4 = keras.Input(shape=[None])
+        return keras.Model((input1, input2, input3, input4), self.call(input1, input2, input3, input4))
 
 
 if __name__ == '__main__':
-    roi_tensor = tf.random.normal([3, 8, 384, 32])
-    reg_model = Recognition_model(lstm_hidden_num=256).model()
-    x = reg_model.predict_step(roi_tensor)
-    print(x.shape)
+    shared_features = tf.random.normal([2, 112, 112, 32])
+    input_transform_matrix = tf.random.normal([3, 6])
+    input_box_masks = tf.convert_to_tensor([0, 0, 1])
+    input_box_widths = tf.convert_to_tensor([55, 12, 13])
 
-    logits = tf.zeros([192, 3, 94])
-    text_labels_sparse=[]
-    a=np.array([0, 0])
-    text_labels_sparse.append(np.array([[0, 0],
-                                      [0, 1],
-                                      [0, 2],
-                                      [1, 0],
-                                      [1, 1],
-                                      [2, 0]]))
-    # text_labels_sparse.append([1,2,3,4,5,6])
-    text_labels_sparse.append([1, 1, 1, 1, 1, 1])
-    text_labels_sparse.append([3, 3])
-    labels = tf.sparse.SparseTensor(text_labels_sparse[0], text_labels_sparse[1], text_labels_sparse[2])
-    # box_widths=tf.cast(tf.convert_to_tensor([23, 12, 14]), tf.int32)
-    dd = tf.cast(tf.convert_to_tensor([192, 192, 192]), tf.int32)
-    loss = tf.nn.ctc_loss(labels, logits, label_length=None,logit_length= dd, blank_index=-1)
-    print(loss)
+    reg_model = Recognition_model(lstm_hidden_num=256)
+    x = reg_model(shared_features, input_transform_matrix, input_box_masks, input_box_widths)
+    print(x.shape)
+    #
+    # logits = tf.zeros([192, 3, 94])
+    # text_labels_sparse=[]
+    # a=np.array([0, 0])
+    # text_labels_sparse.append(np.array([[0, 0],
+    #                                   [0, 1],
+    #                                   [0, 2],
+    #                                   [1, 0],
+    #                                   [1, 1],
+    #                                   [2, 0]]))
+    # # text_labels_sparse.append([1,2,3,4,5,6])
+    # text_labels_sparse.append([1, 1, 1, 1, 1, 1])
+    # text_labels_sparse.append([3, 3])
+    # labels = tf.sparse.SparseTensor(text_labels_sparse[0], text_labels_sparse[1], text_labels_sparse[2])
+    # # box_widths=tf.cast(tf.convert_to_tensor([23, 12, 14]), tf.int32)
+    # dd = tf.cast(tf.convert_to_tensor([192, 192, 192]), tf.int32)
+    # loss = tf.nn.ctc_loss(labels, logits, label_length=None,logit_length= dd, blank_index=-1)
+    # print(loss)
 

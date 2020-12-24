@@ -604,8 +604,8 @@ if __name__ == '__main__':
             print(f'text_labels_sparse_0 shape\t: {text_labels_sparse_0.shape}')
             print(f'text_labels_sparse_1 shape\t: {text_labels_sparse_1.shape}')
             print(f'text_labels_sparse_2 shape\t: {text_labels_sparse_2.shape}')
-            # print(f'text_labels_sparse_0: {text_labels_sparse_0}')
-            # print(f'text_labels_sparse_2: {text_labels_sparse_2}')
-            print(f'image_fns: {image_fns}')
+            print(f'transform_matrixes: {transform_matrixes}')
+            print(f'boxes_masks: {boxes_masks}')
+            print(f'box_widths: {box_widths}')
 
 
