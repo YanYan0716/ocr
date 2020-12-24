@@ -127,7 +127,8 @@ class Detect_model(keras.Model):
 
         self.develop_model = ContectBlock()
 
-    def call(self, input_img):
+    def call(self, input_img, training_masks):
+        print(training_masks.shape)
         x = self.base_model(input_img)
         g_recong, F_score, F_geometry = self.develop_model.call(self.fts)
         return g_recong, F_score, F_geometry
@@ -142,7 +143,7 @@ class Detect_model(keras.Model):
         #     self.base_model.get_layer('block7a_project_bn').output,
         #     self.base_model.get_layer('avg_pool').output]
         # fts, endpoints = base_results[1:6][::-1], [base_results[0], base_results[-2]]
-        return keras.Model(inputs=self.base_model.inputs, outputs=self.develop_model(self.fts))
+        return keras.Model(inputs=[self.base_model.inputs], outputs=self.develop_model(self.fts))
 
 
 if __name__ == '__main__':

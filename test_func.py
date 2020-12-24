@@ -3,6 +3,7 @@ import os
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import tensorflow as tf
+import tensorflow.keras as keras
 
 
 from Module.DetectLoss import detect_loss
@@ -39,6 +40,8 @@ if __name__ == '__main__':
     # 搭建Recognition网络
     regmodel = Recognition_model(lstm_hidden_num=256).model()
 
+
+
     # 定义损失函数
     # detectloss = detect_loss()
     # regloss = recognition_loss()
@@ -52,6 +55,11 @@ if __name__ == '__main__':
     else:
         detectmodel.trainable = False
         regmodel.trainable = False
+    # for i in detectmodel.trainable_weights:
+    trainable_weights = regmodel.trainable_weights+detectmodel.trainable_weights
+    print(len(trainable_weights))
+
+    optim = keras.optimizers.Adam()
 
     # 训练过程
     for i in range(1):
@@ -59,10 +67,11 @@ if __name__ == '__main__':
                     text_labels_sparse_0, text_labels_sparse_1, text_labels_sparse_2) in enumerate(dataset):
             with tf.GradientTape() as tape:
                 shared_feature, f_score, f_geometry = detectmodel(images)
-                recognition_logits = regmodel(shared_feature,
-                                              transform_matrixes,
-                                              boxes_masks,
-                                              box_widths)
+                pad_rois = roi_rotate.roi_rotate_tensor_while(shared_feature,
+                                                              transform_matrixes,
+                                                              boxes_masks,
+                                                              box_widths)
+                recognition_logits = regmodel(pad_rois)
 
                 DetectLoss = detect_loss(score_maps,
                                          tf.cast(f_score, tf.int32),
@@ -70,16 +79,17 @@ if __name__ == '__main__':
                                          tf.cast(f_geometry, tf.int32),
                                          tf.cast(training_masks, tf.int32))
                 RecognitionLoss = recognition_loss(recognition_logits,
-                                          text_labels_sparse_0,
-                                          text_labels_sparse_1,
-                                          text_labels_sparse_2,)
+                                                   text_labels_sparse_0,
+                                                   text_labels_sparse_1,
+                                                   text_labels_sparse_2, )
 
                 total_loss = DetectLoss + THETA * tf.cast(RecognitionLoss, dtype=tf.float64)
                 # 反向传播
-                # grad_detect = tape.gradient(DetectLoss, detectmodel.trainable_weights)
-                # grad_reg = tape.gradient(RecognitionLoss, regmodel.trainable_weights)
+                # grad = tape.gradient(total_loss, trainable_weights)
+                # optim.apply_gradients(zip(grad, trainable_weights))
 
                 print(total_loss)
                 break
             break
         break
+
