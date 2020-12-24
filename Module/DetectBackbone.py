@@ -148,7 +148,7 @@ class Detect_model(keras.Model):
 if __name__ == '__main__':
     weight_dir = './model_weights/efficientnetb0/efficientnetb0_notop.h5'
     detectmodel = Detect_model(base_weights_dir=weight_dir).model()
-    detectmodel
+
     for layer in detectmodel.layers:
         layer.trainable = False
     detectmodel.layers[-1].trainable = True
@@ -164,15 +164,15 @@ if __name__ == '__main__':
     img = tf.expand_dims(img, axis=0)
     print(f'img shape: {img.shape}')
 
-    for layer in detectmodel.layers:
-        print(layer.name, layer.trainable)
-    print('***********************')
+    # for layer in detectmodel.layers:
+    #     print(layer.name, layer.trainable)
+    # print('***********************')
     # detectmodel.summary()
 
-    # a = detectmodel(img)
+    a = detectmodel(img)[0]
     # for i in range(len(a)):
     #     print(a[i].shape)
-    # print(a[0][0][0][0][:10])
+    print(a.shape)
 
 # **********************************以下为原始方法，可作参考，但是已经
 
