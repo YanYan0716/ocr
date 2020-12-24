@@ -1,3 +1,4 @@
+import cv2
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers, regularizers
@@ -20,7 +21,7 @@ class ConvBlock(layers.Layer):
         self.bn = layers.BatchNormalization(epsilon=1e-5, scale=True)
         self.bn_flag = bn_flag
 
-    def call(self, inputs, training=False):
+    def call(self, inputs):
         x = self.conv(inputs)
         if self.bn_flag:
             x = self.bn(x)
@@ -34,7 +35,7 @@ class ConvBlock_develop(layers.Layer):
         self.conv_block_2 = ConvBlock(output_num=output_num, kernel_size=1)
         self.conv_block_3 = ConvBlock(output_num=output_num, kernel_size=3)
 
-    def call(self, inputs1, inputs2, training=False):
+    def call(self, inputs1, inputs2):
         x = self.conv_block_1(inputs1)
         x = tf.concat([inputs2, x], axis=-1)
         x = self.conv_block_2(x)
@@ -72,7 +73,7 @@ class ContectBlock(layers.Layer):
         self.conv_sing_4 = ConvBlock(4, 1, activation_fn='sigmoid', bn_flag=False)
         self.conv_sing_1_2 = ConvBlock(1, 1, activation_fn='sigmoid', bn_flag=False)
 
-    def call(self, inputs, training=False):
+    def call(self, inputs):
         for i in range(4):
             if i == 0:
                 self.h[i] = self.conv_h(inputs[i])
@@ -99,13 +100,11 @@ class ContectBlock(layers.Layer):
         F_geometry = tf.concat([geo_map, angle_map], axis=-1)
 
         return self.g_recong[4], F_score, F_geometry
-        # return inputs
 
 
 class Detect_model(keras.Model):
-    def __init__(self, trainable=False, base_weights_dir='./'):
+    def __init__(self, base_weights_dir='./'):
         super(Detect_model, self).__init__()
-        self.trainable = trainable
         self.base_weights_dir = base_weights_dir
         self.base_model = keras.applications.EfficientNetB0(include_top=False,
                                                             weights=self.base_weights_dir,
@@ -128,11 +127,10 @@ class Detect_model(keras.Model):
 
         self.develop_model = ContectBlock()
 
-    def call(self, input_img, trainable=False):
+    def call(self, input_img):
         x = self.base_model(input_img)
         g_recong, F_score, F_geometry = self.develop_model.call(self.fts)
         return g_recong, F_score, F_geometry
-        # return base_results
 
     def model(self):
         # base_results = [
@@ -145,6 +143,36 @@ class Detect_model(keras.Model):
         #     self.base_model.get_layer('avg_pool').output]
         # fts, endpoints = base_results[1:6][::-1], [base_results[0], base_results[-2]]
         return keras.Model(inputs=self.base_model.inputs, outputs=self.develop_model(self.fts))
+
+
+if __name__ == '__main__':
+    weight_dir = './model_weights/efficientnetb0/efficientnetb0_notop.h5'
+    detectmodel = Detect_model(base_weights_dir=weight_dir).model()
+    detectmodel
+    for layer in detectmodel.layers:
+        layer.trainable = False
+    detectmodel.layers[-1].trainable = True
+    # 获取一张图片
+    img = 'img.jpg'
+
+    # 限制图片的长宽尺寸，保持原比例
+    img = cv2.imread(img)
+
+    # 交换颜色通道
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img = tf.convert_to_tensor(img, dtype=tf.float32) / 255.0
+    img = tf.expand_dims(img, axis=0)
+    print(f'img shape: {img.shape}')
+
+    for layer in detectmodel.layers:
+        print(layer.name, layer.trainable)
+    print('***********************')
+    # detectmodel.summary()
+
+    # a = detectmodel(img)
+    # for i in range(len(a)):
+    #     print(a[i].shape)
+    # print(a[0][0][0][0][:10])
 
 # **********************************以下为原始方法，可作参考，但是已经
 

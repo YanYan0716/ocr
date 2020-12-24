@@ -59,11 +59,10 @@ if __name__ == '__main__':
                     text_labels_sparse_0, text_labels_sparse_1, text_labels_sparse_2) in enumerate(dataset):
             with tf.GradientTape() as tape:
                 shared_feature, f_score, f_geometry = detectmodel(images)
-                pad_rois = roi_rotate.roi_rotate_tensor_while(shared_feature,
-                                                              transform_matrixes,
-                                                              boxes_masks,
-                                                              box_widths)
-                recognition_logits = regmodel(pad_rois)
+                recognition_logits = regmodel(shared_feature,
+                                              transform_matrixes,
+                                              boxes_masks,
+                                              box_widths)
 
                 DetectLoss = detect_loss(score_maps,
                                          tf.cast(f_score, tf.int32),
@@ -77,6 +76,8 @@ if __name__ == '__main__':
 
                 total_loss = DetectLoss + THETA * tf.cast(RecognitionLoss, dtype=tf.float64)
                 # 反向传播
+                # grad_detect = tape.gradient(DetectLoss, detectmodel.trainable_weights)
+                # grad_reg = tape.gradient(RecognitionLoss, regmodel.trainable_weights)
 
                 print(total_loss)
                 break
