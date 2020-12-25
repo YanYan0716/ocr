@@ -86,10 +86,10 @@ if __name__ == '__main__':
                 print(f'RecognitionLoss: {RecognitionLoss}')
                 total_loss = DetectLoss + THETA * tf.cast(RecognitionLoss, dtype=tf.float64)
                 # 反向传播
-                # grad = tape.gradient(total_loss, trainable_weights)
-                # optim.apply_gradients(zip(grad, trainable_weights))
+                grad = tape.gradient(total_loss, trainable_weights)
+                optim.apply_gradients(zip(grad, trainable_weights))
 
-                # print(total_loss)
+                print(total_loss)
                 break
             break
         break
