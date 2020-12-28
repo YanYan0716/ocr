@@ -60,6 +60,9 @@ if __name__ == '__main__':
 
     optim = keras.optimizers.Adam()
 
+    trainable_weights = detectmodel.trainable_weights+rotatemodel.trainable_weights+regmodel.trainable_weights
+    print(len(trainable_weights))
+
     # 训练过程
     for i in range(1):
         for batch, (
@@ -67,12 +70,30 @@ if __name__ == '__main__':
         text_labels_sparse_0, text_labels_sparse_1, text_labels_sparse_2) in enumerate(dataset):
             with tf.GradientTape() as tape:
                 shared_feature, f_score, f_geometry = detectmodel(images)
+
+                input_box_masks = tf.expand_dims(boxes_masks, axis=0)
+                input_box_widths = tf.expand_dims(box_widths, axis=0)
+                input_box_info = tf.transpose(tf.concat([input_box_masks, input_box_widths], axis=0))
+
+                pad_rois = rotatemodel([shared_feature, transform_matrixes, input_box_info])
+
+
                 recognition_logits = regmodel(pad_rois)
 
-                DetectLoss = testloss(shared_feature, f_score, f_geometry)
+                DetectLoss = detect_loss(score_maps,
+                                         tf.cast(f_score, tf.int32),
+                                         geo_maps,
+                                         tf.cast(f_geometry, tf.int32),
+                                         tf.cast(training_masks, tf.int32))
 
-            grad = tape.gradient(DetectLoss, detectmodel.trainable_weights)
-            optim.apply_gradients(zip(grad, detectmodel.trainable_weights))
+                RecognitionLoss = recognition_loss(recognition_logits,
+                                          text_labels_sparse_0,
+                                          text_labels_sparse_1,
+                                          text_labels_sparse_2,)
+
+                total_loss = DetectLoss + THETA * tf.cast(RecognitionLoss, dtype=tf.float64)
+            grad = tape.gradient(total_loss, trainable_weights)
+            optim.apply_gradients(zip(grad, trainable_weights))
 
             break
         break

@@ -17,20 +17,6 @@ def func(shared_features, transform_matrix, box_info):
 
     if box_nums:
         pad_rois = tf.TensorArray(tf.float32, size=box_nums)
-        # j = 0
-        # for i in range(box_nums):
-        #     index = box_masks[i]
-        #     matrix = transform_matrix[i]
-        #     feature_map = shared_features[index]
-        #     box_width = box_widths[i]
-        #     ex_feature_maps = tf.expand_dims(feature_map, 0)
-        #     trans_matrix = tf.expand_dims(matrix, 0)
-        #     pad_rois = pad_rois.write(j, trans_matrix)
-        #     j += 1
-        #     pad_rois = pad_rois.write(j, trans_matrix)
-        #     j +=1
-            # pad_rois = pad_rois.write(i, trans_matrix)
-    # pad_rois = tf.TensorArray(tf.float32, dynamic_size=True)
         max_width = 384
         i = 0
         def cond(pad_rois, i):
@@ -72,7 +58,7 @@ def func(shared_features, transform_matrix, box_info):
 
 class RotateMyLayer(layers.Layer):
     def __init__(self):
-        super(RotateMyLayer, self).__init__(name='roitate')
+        super(RotateMyLayer, self).__init__(name='roitate', trainable=False)
 
     def call(self, x):
         shared_features = x[0]
@@ -89,14 +75,26 @@ class RotateModel(keras.Model):
 
     def call(self, x):
         a = self.layer(x)
+        print(type(a))
+        if a.values():
+            print('ok')
+        else:
+            print('nono')
+        # print(a.values())
+        # a = layers.Conv2D(3, 3, 3)(a)
         return a
 
     def model(self):
         input1 = keras.Input(shape=(None, None, 32), dtype=tf.float32)
         input2 = keras.Input(shape=(None, 6), dtype=tf.float32)
         input3 = keras.Input(shape=(2, ), dtype=tf.int32)
-        return keras.Model(inputs=[input1,input2,input3],
+        return keras.Model(inputs=[input1, input2, input3],
                            outputs=self.call([input1, input2, input3]))
+
+
+def loss(a):
+    a = tf.reduce_mean(a[0])
+    return a
 
 
 if __name__ == '__main__':
@@ -109,8 +107,16 @@ if __name__ == '__main__':
     input_box_info = tf.transpose(tf.concat([input_box_masks, input_box_widths], axis=0))
 
     model = RotateModel().model()
+    optim = keras.optimizers.Adam()
 
-    output = model([shared_features, input_transform_matrix,  input_box_info])
+    with tf.GradientTape() as tape:
+        output = model([shared_features, input_transform_matrix,  input_box_info])
+        print(output.shape)
+        loss_num = loss(output)
+        print(loss_num)
+    grad = tape.gradient(loss_num, model.trainable_weights)
+    optim.apply_gradients(zip(grad, model.trainable_weights))
+
     print(output.shape)
 
 
