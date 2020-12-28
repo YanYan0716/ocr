@@ -6,7 +6,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import tensorflow as tf
 import tensorflow.keras as keras
 
-from Module.DetectLoss import detect_loss
+from Module.DetectLoss import detect_loss, testloss
 from Module.RecognitionBackbone import Recognition_model
 from Module.RecognitionLoss import recognition_loss
 from Module.DetectBackbone import Detect_model
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     regmodel = Recognition_model(lstm_hidden_num=256).model()
 
     # 定义损失函数
-    # detectloss = detect_loss()
+    # detectloss = testloss()
     # regloss = recognition_loss()
 
     #  模型融合
@@ -67,12 +67,10 @@ if __name__ == '__main__':
         text_labels_sparse_0, text_labels_sparse_1, text_labels_sparse_2) in enumerate(dataset):
             with tf.GradientTape() as tape:
                 shared_feature, f_score, f_geometry = detectmodel(images)
+                recognition_logits = regmodel(pad_rois)
 
-                DetectLoss = detect_loss(score_maps,
-                                         tf.cast(f_score, tf.int32),
-                                         geo_maps,
-                                         tf.cast(f_geometry, tf.int32),
-                                         tf.cast(training_masks, tf.int32))
+                DetectLoss = testloss(shared_feature, f_score, f_geometry)
+
             grad = tape.gradient(DetectLoss, detectmodel.trainable_weights)
             optim.apply_gradients(zip(grad, detectmodel.trainable_weights))
 
