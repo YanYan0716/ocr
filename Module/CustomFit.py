@@ -16,12 +16,8 @@ class CustomFit(keras.Model):
         self.regloss = regloss
 
     def train_step(self, data):
-        x, y = data
-        with tf.GradientTape() as tape:
-            y_pred = self.detectmodel(x)
+        images, image_fns, score_maps, geo_maps, training_masks, transform_matrixes, boxes_masks, box_widths, \
+        text_labels_sparse_0, text_labels_sparse_1, text_labels_sparse_2 = data
 
-
-    def test_step(self, data):
-        x, y = data
-        with tf.GradientTape() as tape:
-            y_pred = self.detectmodel(x)
+        # with tf.GradientTape() as tape:
+        #     y_pred = self.detectmodel(x)

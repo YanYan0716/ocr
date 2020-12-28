@@ -119,7 +119,7 @@ if __name__ == '__main__':
     # input_transform_matrix = tf.random.normal([3, 6])
     # input_box_masks = tf.convert_to_tensor([0, 0, 1])
     # input_box_widths = tf.convert_to_tensor([55, 12, 13])
-    # print(input_box_masks.shape)
+    print(shared_features.shape)
 
     reg_model = Recognition_model(lstm_hidden_num=256).model()
     # for layer in reg_model.layers:

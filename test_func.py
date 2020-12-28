@@ -6,7 +6,6 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import tensorflow as tf
 import tensorflow.keras as keras
 
-
 from Module.DetectLoss import detect_loss
 from Module.RecognitionBackbone import Recognition_model
 from Module.RecognitionLoss import recognition_loss
@@ -27,7 +26,8 @@ if __name__ == '__main__':
     dataset = tf.data.Dataset.from_generator(
         generator=generator,
         output_types=(
-            tf.float32, tf.string, tf.int32, tf.int32, tf.int32, tf.float32, tf.int32, tf.int32, tf.int32, tf.int32, tf.int32,
+            tf.float32, tf.string, tf.int32, tf.int32, tf.int32, tf.float32, tf.int32, tf.int32, tf.int32, tf.int32,
+            tf.int32,
         ),
     )
 
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     detectmodel = Detect_model(base_weights_dir=weight_dir).model()
 
     # 加入roi_rotate
-    rotatemodel = RotateModel()
+    rotatemodel = RotateModel().model()
 
     # 搭建Recognition网络
     regmodel = Recognition_model(lstm_hidden_num=256).model()
@@ -45,52 +45,36 @@ if __name__ == '__main__':
     # detectloss = detect_loss()
     # regloss = recognition_loss()
 
+    #  模型融合
+    # inputs = [detectmodel.inputs, rotatemodel.inputs]
+    # outputs = [detectmodel.outputs, regmodel(rotatemodel.outputs)]
+    # summary_model = keras.Model(inputs, outputs)
+
+    #
     # 判断是否训练
     if TRAIN == True:
         for layer in detectmodel.layers:
             layer.trainable = False
         detectmodel.layers[-1].trainable = True
-        regmodel.trainable = True
-    else:
-        detectmodel.trainable = False
-        regmodel.trainable = False
-    # for i in detectmodel.trainable_weights:
-    trainable_weights = regmodel.trainable_weights+detectmodel.trainable_weights
-    print(len(trainable_weights))
+        # detectmodel.summary()
 
     optim = keras.optimizers.Adam()
 
     # 训练过程
     for i in range(1):
-        for batch, (images, image_fns, score_maps, geo_maps, training_masks, transform_matrixes, boxes_masks, box_widths, \
-                    text_labels_sparse_0, text_labels_sparse_1, text_labels_sparse_2) in enumerate(dataset):
+        for batch, (
+        images, image_fns, score_maps, geo_maps, training_masks, transform_matrixes, boxes_masks, box_widths, \
+        text_labels_sparse_0, text_labels_sparse_1, text_labels_sparse_2) in enumerate(dataset):
             with tf.GradientTape() as tape:
                 shared_feature, f_score, f_geometry = detectmodel(images)
-                pad_rois = rotatemodel(shared_feature,
-                                      transform_matrixes,
-                                      boxes_masks,
-                                      box_widths)
-                print('-----------------')
-                recognition_logits = regmodel(pad_rois)
-                print(recognition_logits.shape)
+
                 DetectLoss = detect_loss(score_maps,
                                          tf.cast(f_score, tf.int32),
                                          geo_maps,
                                          tf.cast(f_geometry, tf.int32),
                                          tf.cast(training_masks, tf.int32))
-                print(f'DetectLoss: {DetectLoss}')
-                RecognitionLoss = recognition_loss(recognition_logits,
-                                                   text_labels_sparse_0,
-                                                   text_labels_sparse_1,
-                                                   text_labels_sparse_2, )
-                print(f'RecognitionLoss: {RecognitionLoss}')
-                total_loss = DetectLoss + THETA * tf.cast(RecognitionLoss, dtype=tf.float64)
-                # 反向传播
-                grad = tape.gradient(total_loss, trainable_weights)
-                optim.apply_gradients(zip(grad, trainable_weights))
+            grad = tape.gradient(DetectLoss, detectmodel.trainable_weights)
+            optim.apply_gradients(zip(grad, detectmodel.trainable_weights))
 
-                print(total_loss)
-                break
             break
         break
-

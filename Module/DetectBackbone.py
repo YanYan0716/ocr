@@ -16,7 +16,8 @@ class ConvBlock(layers.Layer):
                                   kernel_size,
                                   activation=activation_fn,
                                   kernel_regularizer=regularizers.l2(1e-5),
-                                  padding='same'
+                                  padding='same',
+                                  trainable=True,
                                   )
         self.bn = layers.BatchNormalization(epsilon=1e-5, scale=True)
         self.bn_flag = bn_flag
@@ -129,7 +130,7 @@ class Detect_model(keras.Model):
 
     def call(self, input_img):
         x = self.base_model(input_img)
-        g_recong, F_score, F_geometry = self.develop_model.call(self.fts)
+        g_recong, F_score, F_geometry = self.develop_model(self.fts)
         return g_recong, F_score, F_geometry
 
     def model(self):
@@ -140,9 +141,6 @@ if __name__ == '__main__':
     weight_dir = './model_weights/efficientnetb0/efficientnetb0_notop.h5'
     detectmodel = Detect_model(base_weights_dir=weight_dir).model()
 
-    for layer in detectmodel.layers:
-        layer.trainable = False
-    detectmodel.layers[-1].trainable = True
     # 获取一张图片
     img = 'img.jpg'
 
@@ -155,125 +153,10 @@ if __name__ == '__main__':
     img = tf.expand_dims(img, axis=0)
     print(f'img shape: {img.shape}')
 
-    # for layer in detectmodel.layers:
-    #     print(layer.name, layer.trainable)
-    # print('***********************')
+    for layer in detectmodel.layers:
+        print(layer.name, layer.trainable)
+    print('***********************')
     # detectmodel.summary()
 
     a = detectmodel(img)[0]
-    # for i in range(len(a)):
-    #     print(a[i].shape)
     print(a.shape)
-
-# **********************************以下为原始方法，可作参考，但是已经
-
-#
-# def normalize(image):
-#     return tf.cast(image, tf.float32) / 255.0
-#
-#
-# def my_conv(inputs, output_num, kernel_size=1, activation_fn='relu', bn=True):
-#     x = layers.Conv2D(output_num,
-#                       kernel_size,
-#                       activation=activation_fn,
-#                       kernel_regularizer=regularizers.l2(1e-5),
-#                       trainable=False,
-#                       padding='same')(inputs)
-#     if bn == True:
-#         x = layers.BatchNormalization(epsilon=1e-5, scale=True, trainable=False)(x)
-#     return x
-#
-#
-# class DetectModel(object):
-#     def __init__(self, is_training=True):
-#         self.is_training = is_training
-#
-#     def model(self, model_name, weights_dir):
-#         '''
-#         定义检测的模型
-#         :param imgs:
-#         :param weight_decay:
-#         :return:
-#         '''
-#         # 图片归一化
-#         # img = normalize(imgs)
-#
-#         return model_name, weights_dir
-#
-#     def detect_eval_model(self, weights_dir, model_name, imgs=None):
-#         assert model_name == 'EfficientNetB0', 'detect model is wrong'
-#         base_model = keras.applications.EfficientNetB0(
-#             include_top=False,
-#             weights=weights_dir,
-#             input_tensor=None,
-#             input_shape=None,
-#             pooling='avg',
-#             classes=1000,
-#             classifier_activation=None
-#         )
-#         model = Model(
-#             inputs=base_model.input,
-#             outputs=[
-#                 base_model.get_layer('normalization').output,
-#                 base_model.get_layer('block1a_project_bn').output,
-#                 base_model.get_layer('block2b_add').output,
-#                 base_model.get_layer('block3b_add').output,
-#                 base_model.get_layer('block5c_add').output,
-#                 base_model.get_layer('block7a_project_bn').output,
-#                 base_model.get_layer('avg_pool').output,
-#             ]
-#         )
-#
-#         with tf.GradientTape() as tape:
-#             # 图片归一化
-#             imgs = normalize(imgs)
-#             output = model(imgs)
-#         fts, endpoints = output[1:6][::-1], [output[0], output[-2]]
-#
-#         g = [None, None, None, None]
-#         h = [None, None, None, None]
-#
-#         g_recong = [None, None, None, None, None]
-#         h_recong = [None, None, None, None, None]
-#         num_outputs_recong = [256, 128, 64, 32, 32]
-#
-#         for i in range(4):
-#             if i == 0:
-#                 h[i] = my_conv(fts[i], num_outputs_recong[i], 1)
-#             else:
-#                 f_t = my_conv(fts[i], num_outputs_recong[i], 1)
-#                 print(f'f_t shape {f_t.shape}')
-#                 print(num_outputs_recong[i])
-#                 c1_1 = my_conv(tf.concat([g[i - 1], f_t], axis=-1),
-#                                num_outputs_recong[i],
-#                                1)
-#                 h[i] = my_conv(c1_1, num_outputs_recong[i], 3)
-#
-#             if i <= 2:
-#                 g[i] = unpool(h[i])
-#                 print(f'detect {g[i].shape}')
-#             else:
-#                 g[i] = my_conv(h[i], num_outputs_recong[i], 3)
-#
-#         for i in range(1, 5):
-#             if i == 1:
-#                 h_recong[i] = my_conv(fts[i], num_outputs_recong[i], 1)
-#             else:
-#                 f_t = my_conv(fts[i], num_outputs_recong[i], 1)
-#                 c1_1_recong = my_conv(tf.concat([g_recong[i - 1], f_t], axis=-1),
-#                                       num_outputs_recong[i],
-#                                       1)
-#                 h_recong[i] = my_conv(c1_1_recong, num_outputs_recong[i], 3)
-#
-#             if i <= 3:
-#                 g_recong[i] = unpool(h_recong[i])
-#             else:
-#                 g_recong[i] = my_conv(h_recong[i], num_outputs_recong[i], 3)
-#
-#         F_score = my_conv(g[3], 1, 1, activation_fn='sigmoid', bn=False)
-#         TEXT_SCALE = 512
-#         geo_map = my_conv(g[3], 4, 1, activation_fn='sigmoid', bn=False) * TEXT_SCALE
-#         angle_map = (my_conv(g[3], 1, 1, activation_fn='sigmoid', bn=False) - 0.5) * np.pi / 2
-#         F_geometry = tf.concat([geo_map, angle_map], axis=-1)
-#
-#         return g_recong[4], F_score, F_geometry
