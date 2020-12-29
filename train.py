@@ -14,7 +14,7 @@ from DataPreprocess.DataGen import generator
 
 if __name__ == '__main__':
     MAX_EPOCHS = 2
-    THETA = 0.9
+    THETA = 0.9  # 控制检测和识别loss占总体loss的权重
     TRAIN = True
     CONTINUE_TRAIN = False
     DETECT_WEIGHTS_DIR = './model_weights/detect_weights'
@@ -24,8 +24,8 @@ if __name__ == '__main__':
     dataset = tf.data.Dataset.from_generator(
         generator=generator,
         output_types=(
-            tf.float32, tf.string, tf.int32, tf.int32, tf.int32, tf.float32, tf.int32, tf.int32, tf.int32, tf.int32,
-            tf.int32,
+            tf.float32, tf.string, tf.float32, tf.float32, tf.float32, tf.float32, tf.float32, tf.float32, tf.int32,
+            tf.int32, tf.int32
         ),
     )
 
@@ -63,7 +63,6 @@ if __name__ == '__main__':
     detectmodel.layers[-1].trainable = True
 
     print(len(summary_model.trainable_weights))
-    # print(len(regmodel.trainable_weights))
 
     optim = keras.optimizers.Adam()
 
@@ -73,7 +72,7 @@ if __name__ == '__main__':
                 images, image_fns, score_maps, geo_maps, training_masks, transform_matrixes, boxes_masks, box_widths, \
                 text_labels_sparse_0, text_labels_sparse_1, text_labels_sparse_2) in enumerate(dataset):
             with tf.GradientTape() as tape:
-                # tape.watch(summary_model.variables)
+                print(images.shape)
                 input_box_masks = tf.expand_dims(boxes_masks, axis=0)
                 input_box_widths = tf.expand_dims(box_widths, axis=0)
                 input_box_info = tf.transpose(tf.concat([input_box_masks, input_box_widths], axis=0))
@@ -96,13 +95,12 @@ if __name__ == '__main__':
                 total_loss = tf.cast(DetectLoss, dtype=tf.float32) + THETA * tf.cast(RecognitionLoss, dtype=tf.float32)
             grad = tape.gradient([DetectLoss, RecognitionLoss], summary_model.trainable_weights)
             optim.apply_gradients(zip(grad, summary_model.trainable_weights))
-
-            # 观察是否可以进行反向传播
-            j = 0
-            for i in range(len(grad)):
-                if hasattr(grad[i], 'shape'):
-                    j += 1
-                    print(i, j, grad[i].shape)
-
+            print(total_loss)
+            # # 观察是否可以进行反向传播
+            # j = 0
+            # for i in range(len(grad)):
+            #     if hasattr(grad[i], 'shape'):
+            #         j += 1
+            #         print(i, j, grad[i].shape)
             break
         break

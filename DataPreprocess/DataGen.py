@@ -536,12 +536,12 @@ def generator(INPUT_SIZE=512,
 
                 yield tf.cast(tf.convert_to_tensor(images), dtype=tf.float32), \
                       tf.cast(tf.convert_to_tensor(image_fns), dtype=tf.string), \
-                      tf.cast(tf.convert_to_tensor(score_maps), dtype=tf.int32), \
-                      tf.cast(tf.convert_to_tensor(geo_maps), dtype=tf.int32), \
-                      tf.cast(tf.convert_to_tensor(training_masks), dtype=tf.int32), \
+                      tf.cast(tf.convert_to_tensor(score_maps), dtype=tf.float32), \
+                      tf.cast(tf.convert_to_tensor(geo_maps), dtype=tf.float32), \
+                      tf.cast(tf.convert_to_tensor(training_masks), dtype=tf.float32), \
                       tf.cast(tf.convert_to_tensor(transform_matrixes), dtype=tf.float32), \
-                      tf.cast(tf.convert_to_tensor(boxes_masks), dtype=tf.int32), \
-                      tf.cast(tf.convert_to_tensor(box_widths), dtype=tf.int32), \
+                      tf.cast(tf.convert_to_tensor(boxes_masks), dtype=tf.float32), \
+                      tf.cast(tf.convert_to_tensor(box_widths), dtype=tf.float32), \
                       tf.cast(tf.convert_to_tensor(text_labels_sparse_0), dtype=tf.int32),\
                       tf.cast(tf.convert_to_tensor(text_labels_sparse_1), dtype=tf.int32),\
                       tf.cast(tf.convert_to_tensor(text_labels_sparse_2), dtype=tf.int32)
@@ -573,7 +573,7 @@ if __name__ == '__main__':
     dataset = tf.data.Dataset.from_generator(
         generator=generator,
         output_types=(
-            tf.float32, tf.string, tf.int32, tf.int32, tf.int32, tf.float32, tf.int32, tf.int32, tf.int32, tf.int32, tf.int32,
+            tf.float32, tf.string, tf.float32, tf.float32, tf.float32, tf.float32, tf.float32, tf.float32, tf.int32, tf.int32, tf.int32,
         ),
     )
 
@@ -599,13 +599,15 @@ if __name__ == '__main__':
             print(f'geo_maps shape\t\t\t: {geo_maps.shape}')
             print(f'training_masks shape\t\t: {training_masks.shape}')
             print(f'transform_matrixes shape\t: {transform_matrixes.shape}')
-            print(f'boxes_masks shape\t\t: {boxes_masks.shape}')
-            print(f'box_widths shape\t\t: {box_widths.shape}')
+            print(f'boxes_masks \t\t: {boxes_masks}')
+            print(f'box_widths \t\t: {box_widths}')
             print(f'text_labels_sparse_0 shape\t: {text_labels_sparse_0.shape}')
-            print(f'text_labels_sparse_1 shape\t: {text_labels_sparse_1.shape}')
-            print(f'text_labels_sparse_2 shape\t: {text_labels_sparse_2.shape}')
-            print(f'transform_matrixes: {transform_matrixes}')
-            print(f'boxes_masks: {boxes_masks}')
-            print(f'box_widths: {box_widths}')
+            print(f'text_labels_sparse_1 \t: {text_labels_sparse_1}')
+            print(f'text_labels_sparse_2 \t: {text_labels_sparse_2}')
+            # print(f'transform_matrixes: {transform_matrixes}')
+            # print(f'boxes_masks: {boxes_masks}')
+            # print(f'box_widths: {box_widths}')
+            break
+        break
 
 
