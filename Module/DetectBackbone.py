@@ -7,6 +7,8 @@ import numpy as np
 '''
 与原文改动：使用反卷积替换unpool
 '''
+
+
 @tf.function
 def unpool(inputs):
     return tf.image.resize(inputs, size=[tf.shape(inputs)[1] * 2, tf.shape(inputs)[2] * 2])
@@ -94,7 +96,7 @@ class ContectBlock(layers.Layer):
             if i == 0:
                 self.h[i] = self.conv_h(inputs[i])
             else:
-                self.h[i] = self.conv_develop_1[i-1]([inputs[i], self.g[i-1]])
+                self.h[i] = self.conv_develop_1[i - 1]([inputs[i], self.g[i - 1]])
             if i <= 2:
                 self.g[i] = self.unpool_1[i](self.h[i])
             else:
@@ -104,9 +106,9 @@ class ContectBlock(layers.Layer):
             if i == 1:
                 self.h_recong[i] = self.conv_h_recong(inputs[i])
             else:
-                self.h_recong[i] = self.conv_develop_2[i-2]([inputs[i], self.g_recong[i-1]])
+                self.h_recong[i] = self.conv_develop_2[i - 2]([inputs[i], self.g_recong[i - 1]])
             if i <= 3:
-                self.g_recong[i] = self.unpool_2[i-2](self.h_recong[i])
+                self.g_recong[i] = self.unpool_2[i - 2](self.h_recong[i])
             else:
                 self.g_recong[i] = self.conv_g_recong(self.h_recong[i])
 
@@ -156,7 +158,7 @@ class Detect_model(keras.Model):
         ]
         fts, endpoints = base_results[1:6][::-1], [base_results[0], base_results[-2]]
 
-        g_recong, F_score, F_geometry= self.develop_model(fts, training=True)
+        g_recong, F_score, F_geometry = self.develop_model(fts, training=True)
         return g_recong, F_score, F_geometry
 
     def model(self):
@@ -164,7 +166,7 @@ class Detect_model(keras.Model):
 
 
 def loss(a, b, c):
-    a=tf.reduce_mean(a[0])
+    a = tf.reduce_mean(a[0])
     b = tf.reduce_mean(b[0])
     c = tf.reduce_mean(c[0])
     return tf.reduce_mean([a, b, c])
@@ -193,9 +195,9 @@ if __name__ == '__main__':
 
     # loss = loss()
     with tf.GradientTape() as tape:
-        a , b, c= detectmodel(img, training=True)
+        a, b, c = detectmodel(img, training=True)
         print(a[0].shape)
-        loss_num = loss(a,b, c)
+        loss_num = loss(a, b, c)
         print(loss_num)
     grad = tape.gradient(loss_num, detectmodel.trainable_weights)
     optim.apply_gradients(zip(grad, detectmodel.trainable_weights))

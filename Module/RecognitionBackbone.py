@@ -79,14 +79,14 @@ class LstmDecoder(layers.Layer):
     def call(self, input_tensor):
         batch_size = tf.shape(input_tensor)[0]
         lstm_output = self.bilstm(input_tensor)
-        infer_output = tf.reshape(lstm_output, [-1, self.lstm_hidden_num*2])
+        infer_output = tf.reshape(lstm_output, [-1, self.lstm_hidden_num * 2])
 
         W = tf.Variable(
-            initial_value=lambda :tf.random.truncated_normal(
+            initial_value=lambda: tf.random.truncated_normal(
                 shape=[self.lstm_hidden_num * 2, config.NUM_CLASSES],
                 stddev=0.1),
             trainable=True)
-        b = tf.Variable(initial_value=lambda :tf.constant(0., shape=[config.NUM_CLASSES]),
+        b = tf.Variable(initial_value=lambda: tf.constant(0., shape=[config.NUM_CLASSES]),
                         trainable=True)
 
         logits = tf.add(tf.matmul(infer_output, W), b)
@@ -100,34 +100,37 @@ class Recognition_model(keras.Model):
     def __init__(self, lstm_hidden_num):
         super(Recognition_model, self).__init__()
         self.lstm_hidden_num = lstm_hidden_num
+        self.layer = RotateMyLayer()
         self.encoder = CNNEncoder()
         self.decoder = LstmDecoder(lstm_hidden_num=self.lstm_hidden_num)
 
-    def call(self, roi_fmp):
-        a = self.encoder(roi_fmp)
+    def call(self, x):
+        a = self.layer(x)
+        a = self.encoder(a)
         a = tf.squeeze(a, axis=1)
         a = self.decoder(a)
         return a
 
     def model(self):
-        input1 = keras.Input(shape=(None, None, 32))
-        return keras.Model(inputs=[input1], outputs=self.call(input1))
+        input1 = keras.Input(shape=(None, None, 32), dtype=tf.float32)
+        input2 = keras.Input(shape=(None, 6), dtype=tf.float32)
+        input3 = keras.Input(shape=(2,), dtype=tf.int32)
+        return keras.Model(inputs=[input1, input2, input3],
+                           outputs=self.call([input1, input2, input3]))
 
 
 if __name__ == '__main__':
-    shared_features = tf.random.normal([3, 8, 384, 32])
-    # input_transform_matrix = tf.random.normal([3, 6])
-    # input_box_masks = tf.convert_to_tensor([0, 0, 1])
-    # input_box_widths = tf.convert_to_tensor([55, 12, 13])
-    print(shared_features.shape)
+    shared_features = tf.random.normal([2, 112, 112, 32])
+    input_transform_matrix = tf.random.normal([3, 6])
+    input_box_masks = tf.expand_dims(tf.convert_to_tensor([0, 0, 1]), axis=0)
+    input_box_widths = tf.expand_dims(tf.convert_to_tensor([55, 12, 13]), axis=0)
+    input_box_info = tf.transpose(tf.concat([input_box_masks, input_box_widths], axis=0))
 
     reg_model = Recognition_model(lstm_hidden_num=256).model()
-    # for layer in reg_model.layers:
-    #     print(layer.trainable)
-    # print(len(reg_model.trainable_weights))
-    x = reg_model(shared_features)
+
+    x = reg_model([shared_features, input_transform_matrix, input_box_info])
     print(x.shape)
-    #
+
     # logits = tf.zeros([192, 3, 94])
     # text_labels_sparse=[]
     # a=np.array([0, 0])
@@ -145,4 +148,3 @@ if __name__ == '__main__':
     # dd = tf.cast(tf.convert_to_tensor([192, 192, 192]), tf.int32)
     # loss = tf.nn.ctc_loss(labels, logits, label_length=None,logit_length= dd, blank_index=-1)
     # print(loss)
-

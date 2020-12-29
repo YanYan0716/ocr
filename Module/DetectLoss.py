@@ -51,11 +51,11 @@ def detect_loss(y_true_cls, y_pred_cls, y_true_geo, y_pred_geo, training_mask):
     L_theta = 1.0 - tf.math.cos(tf.cast(theta_pred - theta_gt, tf.float64))  # cos(0)=1
     L_g = L_AABB + 20.0 * L_theta
     loss_part = tf.reduce_mean(L_g * tf.cast(y_true_cls, tf.float64) * tf.cast(training_mask, tf.float64))
-    return  loss_part + classification_loss
+    return loss_part + classification_loss
 
 
-def testloss(a, b, c):
-    a=tf.reduce_mean(a[0])
+def testloss(a, b, ):
+    a = tf.reduce_mean(a[0])
     b = tf.reduce_mean(b[0])
-    c = tf.reduce_mean(c[0])
-    return tf.reduce_mean([a, b, c])
+    # c = tf.reduce_mean(c[0])
+    return tf.reduce_mean([a, b])
