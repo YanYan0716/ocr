@@ -57,7 +57,11 @@ if __name__ == '__main__':
 
     all_outputs = [outputs0, outputs1, outputs2, regmodel([outputs0, inputs3, inputs4])]
     summary_model = keras.Model(all_inputs, all_outputs)
-    # print(len(summary_model.trainable_weights))
+
+    for layer in detectmodel.layers:
+        layer.trainable = False
+    detectmodel.layers[-1].trainable = True
+
     # print(len(regmodel.trainable_weights))
 
     optim = keras.optimizers.Adam()
@@ -89,7 +93,7 @@ if __name__ == '__main__':
                                                    text_labels_sparse_2, )
 
                 total_loss = tf.cast(DetectLoss, dtype=tf.float32) + THETA * tf.cast(RecognitionLoss, dtype=tf.float32)
-            grad = tape.gradient([DetectLoss, RecognitionLoss], summary_model.trainable_weights)
+            grad = tape.gradient(total_loss, summary_model.trainable_weights)
             optim.apply_gradients(zip(grad, summary_model.trainable_weights))
 
             # 观察是否可以进行反向传播

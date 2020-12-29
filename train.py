@@ -57,7 +57,12 @@ if __name__ == '__main__':
 
     all_outputs = [outputs0, outputs1, outputs2, regmodel([outputs0, inputs3, inputs4])]
     summary_model = keras.Model(all_inputs, all_outputs)
-    # print(len(summary_model.trainable_weights))
+
+    for layer in detectmodel.layers:
+        layer.trainable = False
+    detectmodel.layers[-1].trainable = True
+
+    print(len(summary_model.trainable_weights))
     # print(len(regmodel.trainable_weights))
 
     optim = keras.optimizers.Adam()

@@ -15,7 +15,7 @@ def unpool(inputs):
 
 
 class ConvBlock(layers.Layer):
-    def __init__(self, output_num, kernel_size=1, activation_fn='relu', bn_flag=True):
+    def __init__(self, output_num, kernel_size=1, activation_fn='relu', bn_flag=True, name=None):
         super(ConvBlock, self).__init__()
         self.conv = layers.Conv2D(output_num,
                                   kernel_size,
@@ -23,6 +23,7 @@ class ConvBlock(layers.Layer):
                                   kernel_regularizer=regularizers.l2(1e-5),
                                   padding='same',
                                   trainable=True,
+                                  name=name
                                   )
         self.bn = layers.BatchNormalization(epsilon=1e-5, scale=True)
         self.bn_flag = bn_flag
@@ -71,13 +72,13 @@ class ContectBlock(layers.Layer):
             ConvBlock_develop(self.num_outputs_recong[3]),
             ConvBlock_develop(self.num_outputs_recong[4]),
         ]
-        self.conv_h = ConvBlock(output_num=num_outputs_recong[0], kernel_size=1)
-        self.conv_g = ConvBlock(output_num=num_outputs_recong[3], kernel_size=3)
-        self.conv_h_recong = ConvBlock(output_num=num_outputs_recong[1], kernel_size=1)
-        self.conv_g_recong = ConvBlock(output_num=num_outputs_recong[4], kernel_size=3)
-        self.conv_sing_1_1 = ConvBlock(1, 1, activation_fn='sigmoid', bn_flag=False)
-        self.conv_sing_4 = ConvBlock(4, 1, activation_fn='sigmoid', bn_flag=False)
-        self.conv_sing_1_2 = ConvBlock(1, 1, activation_fn='sigmoid', bn_flag=False)
+        self.conv_h = ConvBlock(output_num=num_outputs_recong[0], kernel_size=1, name='conv_h')
+        self.conv_g = ConvBlock(output_num=num_outputs_recong[3], kernel_size=3, name='conv_g')
+        self.conv_h_recong = ConvBlock(output_num=num_outputs_recong[1], kernel_size=1, name='conv_h_recong')
+        self.conv_g_recong = ConvBlock(output_num=num_outputs_recong[4], kernel_size=3, name='conv_g_recong')
+        self.conv_sing_1_1 = ConvBlock(1, 1, activation_fn='sigmoid', bn_flag=False, name='conv_sing_1_1')
+        self.conv_sing_4 = ConvBlock(4, 1, activation_fn='sigmoid', bn_flag=False, name='conv_sing_4')
+        self.conv_sing_1_2 = ConvBlock(1, 1, activation_fn='sigmoid', bn_flag=False, name='conv_sing_1_2')
 
         self.unpool_1 = [
             keras.layers.Conv2DTranspose(num_outputs_recong[1], kernel_size=3, strides=2, padding='same'),
@@ -157,7 +158,6 @@ class Detect_model(keras.Model):
             self.base_model.get_layer('avg_pool').output
         ]
         fts, endpoints = base_results[1:6][::-1], [base_results[0], base_results[-2]]
-
         g_recong, F_score, F_geometry = self.develop_model(fts, training=True)
         return g_recong, F_score, F_geometry
 
@@ -193,14 +193,17 @@ if __name__ == '__main__':
         layer.trainable = False
     detectmodel.layers[-1].trainable = True
 
-    # loss = loss()
-    with tf.GradientTape() as tape:
-        a, b, c = detectmodel(img, training=True)
-        print(a[0].shape)
-        loss_num = loss(a, b, c)
-        print(loss_num)
-    grad = tape.gradient(loss_num, detectmodel.trainable_weights)
-    optim.apply_gradients(zip(grad, detectmodel.trainable_weights))
+    for i in range(len(detectmodel.trainable_weights)):
+        print(detectmodel.trainable_weights[i].name)
+    # print((detectmodel.trainable_weights[0]))
+
+    # with tf.GradientTape() as tape:
+    #     a, b, c = detectmodel(img, training=True)
+    #     print(a[0].shape)
+    #     loss_num = loss(a, b, c)
+    #     print(loss_num)
+    # grad = tape.gradient(loss_num, detectmodel.trainable_weights)
+    # optim.apply_gradients(zip(grad, detectmodel.trainable_weights))
     # print(grad)
 
 # ----------------以下为原来的做法，好像也不是原文中的------------
