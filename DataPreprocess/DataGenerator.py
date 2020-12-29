@@ -7,6 +7,7 @@ from itertools import compress
 
 sys.path.append('D:\\algorithm\\ocr')
 sys.path.append('E:\\algorithm\\ocr')
+sys.path.append('/content/ocr/')
 import numpy as np
 import cv2
 import tensorflow as tf
