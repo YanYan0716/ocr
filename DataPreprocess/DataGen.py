@@ -568,7 +568,7 @@ if __name__ == '__main__':
     gt_list = [gt_mem.strip() for gt_mem in gt_list]
 
     # ----通过tf.data.Dataset.from_generator产生输入数据
-    Generator = generator(img_list, gt_list)
+    Generator = generator()
 
     dataset = tf.data.Dataset.from_generator(
         generator=generator,
@@ -576,6 +576,7 @@ if __name__ == '__main__':
             tf.float32, tf.string, tf.float32, tf.float32, tf.float32, tf.float32, tf.float32, tf.float32, tf.int32, tf.int32, tf.int32,
         ),
     )
+
 
     for i in range(2):
         print('**************************')
@@ -609,5 +610,3 @@ if __name__ == '__main__':
             # print(f'box_widths: {box_widths}')
             break
         break
-
-

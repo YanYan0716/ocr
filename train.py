@@ -9,6 +9,7 @@ from Module.RecognitionBackbone import Recognition_model
 from Module.RecognitionLoss import recognition_loss
 from Module.DetectBackbone import Detect_model
 from DataPreprocess.DataGen import generator
+import config
 
 if __name__ == '__main__':
     MAX_EPOCHS = 1
@@ -19,6 +20,7 @@ if __name__ == '__main__':
     SAVE_MODEL = False
     BEST_LOSS = 1000
     LOSS_STEP = 20  # 设置评估loss的步长
+    AUTOTUNE = tf.data.experimental.AUTOTUNE
 
     # 构建数据库
     # ----通过tf.data.Dataset.from_generator产生输入数据

@@ -8,7 +8,7 @@ sys.path.append('E:\\algorithm\\ocr')
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers, regularizers
-import numpy as np
+
 
 import config
 from Module.RRotateLayer import RotateMyLayer
