@@ -120,6 +120,5 @@ if __name__ == '__main__':
             #         print(f'saving model to ----> {MODEL_WEIGHTS_DIR}')
             #         summary_model.save(MODEL_WEIGHTS_DIR)
             #     temp_loss = 0
-
             break
         break
