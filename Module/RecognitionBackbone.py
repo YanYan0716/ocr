@@ -131,10 +131,10 @@ if __name__ == '__main__':
 
     x = reg_model([shared_features, input_transform_matrix, input_box_info])
     # reg_model.save('./text')
-    reg_model.save_weights('./ttt')
+    reg_model.save_weights('./model_weights/ttt')
     print(x.shape)
 
-    reg_model.load_weights('./ttt')
+    reg_model.load_weights('./model_weights/ttt')
     # logits = tf.zeros([192, 3, 94])
     # text_labels_sparse=[]
     # a=np.array([0, 0])
