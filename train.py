@@ -110,15 +110,15 @@ if __name__ == '__main__':
             #         j += 1
             #         print(i, j, grad[i].shape)
             optim.apply_gradients(zip(grad, summary_model.trainable_weights))
-            summary_model.save_weights(MODEL_WEIGHTS_DIR)
+            # summary_model.save_weights(MODEL_WEIGHTS_DIR)
             # # 计算平均loss并保存模型
-            # temp_loss += total_loss.numpy()
-            # if (batch + 1) % LOSS_STEP == 0:
-            #     now_loss = temp_loss / 20.0
-            #     print(f'the loss is :{now_loss}')
-            #     if now_loss < BEST_LOSS:
-            #         print(f'saving model to ----> {MODEL_WEIGHTS_DIR}')
-            #         summary_model.save(MODEL_WEIGHTS_DIR)
-            #     temp_loss = 0
+            temp_loss += total_loss.numpy()
+            if (batch + 1) % LOSS_STEP == 0:
+                now_loss = temp_loss / LOSS_STEP
+                print(f'the loss is :{now_loss}')
+                if now_loss < BEST_LOSS:
+                    print(f'saving model to ----> {MODEL_WEIGHTS_DIR}')
+                    summary_model.save_weights(MODEL_WEIGHTS_DIR)
+                temp_loss = 0
             break
         break
