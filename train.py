@@ -72,7 +72,7 @@ if __name__ == '__main__':
 
     print(len(summary_model.trainable_weights))
 
-    optim = keras.optimizers.Adam(learning_rate=LEARNING_RATE)
+    optim = keras.optimizers.SGD(learning_rate=LEARNING_RATE)
 
     # 训练过程
     for i in range(MAX_EPOCHS):
