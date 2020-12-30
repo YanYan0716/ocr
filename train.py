@@ -118,6 +118,7 @@ if __name__ == '__main__':
                 print(f'the loss is :{now_loss}')
                 if now_loss < BEST_LOSS:
                     print(f'saving model to ----> {MODEL_WEIGHTS_DIR}')
+                    BEST_LOSS = now_loss
                     summary_model.save_weights(MODEL_WEIGHTS_DIR)
                 temp_loss = 0
             break
