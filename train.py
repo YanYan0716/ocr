@@ -13,7 +13,7 @@ import config
 
 if __name__ == '__main__':
     MAX_EPOCHS = 1
-    THETA = 0.9  # 控制检测和识别loss占总体loss的权重
+    THETA = 0.01  # 控制检测和识别loss占总体loss的权重
     TRAIN = True
     CONTINUE_TRAIN = False
     MODEL_WEIGHTS_DIR = './model_weights/summary_weights/'
@@ -21,6 +21,7 @@ if __name__ == '__main__':
     BEST_LOSS = 1000
     LOSS_STEP = 20  # 设置评估loss的步长
     AUTOTUNE = tf.data.experimental.AUTOTUNE
+    LEARNING_RATE = 0.0001
 
     # 构建数据库
     # ----通过tf.data.Dataset.from_generator产生输入数据
@@ -71,7 +72,7 @@ if __name__ == '__main__':
 
     print(len(summary_model.trainable_weights))
 
-    optim = keras.optimizers.Adam()
+    optim = keras.optimizers.Adam(learning_rate=LEARNING_RATE)
 
     # 训练过程
     for i in range(MAX_EPOCHS):
@@ -119,7 +120,7 @@ if __name__ == '__main__':
                 if now_loss < BEST_LOSS:
                     print(f'saving model to ----> {MODEL_WEIGHTS_DIR}')
                     BEST_LOSS = now_loss
-                    summary_model.save_weights(MODEL_WEIGHTS_DIR)
+                    summary_model.save_weights(MODEL_WEIGHTS_DIR+str(i))
                 temp_loss = 0
             break
         break
