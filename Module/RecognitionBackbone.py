@@ -5,6 +5,7 @@ import sys
 
 sys.path.append('D:\\algorithm\\ocr')
 sys.path.append('E:\\algorithm\\ocr')
+sys.path.append('/content/ocr/')
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers, regularizers
