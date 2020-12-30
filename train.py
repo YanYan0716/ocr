@@ -75,7 +75,7 @@ if __name__ == '__main__':
 
     # 训练过程
     for i in range(MAX_EPOCHS):
-        print(f'EPOCH {i+1} for MAX_EPOCH {MAX_EPOCHS}')
+        print(f'EPOCH {i+1} for MAX_EPOCH {MAX_EPOCHS}...')
         temp_loss = 0
         for batch, (
                 images, image_fns, score_maps, geo_maps, training_masks, transform_matrixes, boxes_masks, box_widths, \
