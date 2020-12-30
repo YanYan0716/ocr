@@ -32,6 +32,7 @@ def label_to_array(label):
         label = label.replace(' ', '')
         return [config.CHAR_VECTOR.index(x) for x in label]
     except:
+        print(label)
         print('something error in DaraGenerator.label_to_array')
     # return label
 
@@ -380,7 +381,7 @@ def generator(INPUT_SIZE=512,
     :param random_scale:
     :return:
     '''
-    img_list = open('./icdar/train/images.txt', 'r').readlines()
+    img_list = open('./icdar/train/image.txt', 'r').readlines()
     img_list = [img_mem.strip() for img_mem in img_list]
     gt_list = open('./icdar/train/GT.txt', 'r').readlines()
     gt_list = [gt_mem.strip() for gt_mem in gt_list]
@@ -462,6 +463,7 @@ def generator(INPUT_SIZE=512,
 
             assert len(text_label) == len(rectangles)
             if len(text_label) == 0:
+                # print('text_label is 0')
                 continue
 
             boxes_mask = [count] * len(rectangles)
@@ -578,8 +580,7 @@ if __name__ == '__main__':
         ),
     )
 
-
-    for i in range(2):
+    for i in range(1):
         print('**************************')
         for batch, (images, \
                     image_fns, \
@@ -593,21 +594,21 @@ if __name__ == '__main__':
                     text_labels_sparse_1, \
                     text_labels_sparse_2
                     ) in enumerate(dataset):
+            # print(i, batch)
             # 打印一个batch_size的信息
-            print('--------------总结一个batch_size的相关输出--------------')
-            print(f'images shape\t\t\t: {images.shape}')
-            print(f'image_fns shape\t\t\t: {image_fns.shape}')
-            print(f'score_maps shape\t\t: {score_maps.shape}')
-            print(f'geo_maps shape\t\t\t: {geo_maps.shape}')
-            print(f'training_masks shape\t\t: {training_masks.shape}')
-            print(f'transform_matrixes shape\t: {transform_matrixes.shape}')
-            print(f'boxes_masks \t\t: {boxes_masks}')
-            print(f'box_widths \t\t: {box_widths}')
-            print(f'text_labels_sparse_0 shape\t: {text_labels_sparse_0.shape}')
-            print(f'text_labels_sparse_1 \t: {text_labels_sparse_1}')
-            print(f'text_labels_sparse_2 \t: {text_labels_sparse_2}')
+            # print('--------------总结一个batch_size的相关输出--------------')
+            # print(f'images shape\t\t\t: {(images/255.0).shape}')
+            print(f'image_fns shape\t\t\t: {image_fns}')
+            # print(f'score_maps shape\t\t: {score_maps.shape}')
+            # print(f'geo_maps shape\t\t\t: {geo_maps.shape}')
+            # print(f'training_masks shape\t\t: {training_masks.shape}')
+            # print(f'transform_matrixes shape\t: {transform_matrixes.shape}')
+            # print(f'boxes_masks \t\t: {boxes_masks}')
+            # print(f'box_widths \t\t: {box_widths}')
+            # print(f'text_labels_sparse_0 shape\t: {text_labels_sparse_0.shape}')
+            # print(f'text_labels_sparse_1 \t: {text_labels_sparse_1}')
+            # print(f'text_labels_sparse_2 \t: {text_labels_sparse_2}')
             # print(f'transform_matrixes: {transform_matrixes}')
             # print(f'boxes_masks: {boxes_masks}')
             # print(f'box_widths: {box_widths}')
-            break
-        break
+

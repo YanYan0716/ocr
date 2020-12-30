@@ -87,7 +87,7 @@ if __name__ == '__main__':
                 input_box_info = tf.transpose(tf.concat([input_box_masks, input_box_widths], axis=0))
 
                 shared_feature, f_score, f_geometry, recognition_logits = summary_model(
-                    [images, transform_matrixes, input_box_info]
+                    [images/255.0, transform_matrixes, input_box_info]
                 )
 
                 DetectLoss = detect_loss(tf.cast(score_maps, tf.float32),

@@ -47,7 +47,7 @@ def detect_loss(y_true_cls, y_pred_cls, y_true_geo, y_pred_geo, training_mask):
     area_inter = w_union * h_union
     area_union = area_gt + area_pred - area_inter
     IOU = (tf.cast(area_inter, tf.float64) + 1.0) / (tf.cast(area_union, tf.float64) + 1.0)
-    L_AABB = -tf.math.log(IOU)
+    L_AABB = -tf.math.log(IOU+ 1e-10)
     L_theta = 1.0 - tf.math.cos(tf.cast(theta_pred - theta_gt, tf.float64))  # cos(0)=1
     L_g = L_AABB + 20.0 * L_theta
     loss_part = tf.reduce_mean(L_g * tf.cast(y_true_cls, tf.float64) * tf.cast(training_mask, tf.float64))
