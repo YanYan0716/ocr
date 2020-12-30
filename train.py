@@ -16,7 +16,7 @@ if __name__ == '__main__':
     THETA = 0.01  # 控制检测和识别loss占总体loss的权重
     TRAIN = True
     CONTINUE_TRAIN = False
-    MODEL_WEIGHTS_DIR = './model_weights/summary_weights/'
+    MODEL_WEIGHTS_DIR = './model_weights/summary_weights/best'
     SAVE_MODEL = False
     BEST_LOSS = 1000
     LOSS_STEP = 20  # 设置评估loss的步长
@@ -68,7 +68,7 @@ if __name__ == '__main__':
         regmodel.trainable = False
 
     if CONTINUE_TRAIN:
-        summary_model = keras.models.load_model(MODEL_WEIGHTS_DIR)
+        summary_model.load_weights(MODEL_WEIGHTS_DIR)
 
     print(len(summary_model.trainable_weights))
 
@@ -120,7 +120,7 @@ if __name__ == '__main__':
                 if now_loss < BEST_LOSS:
                     print(f'saving model to ----> {MODEL_WEIGHTS_DIR}')
                     BEST_LOSS = now_loss
-                    summary_model.save_weights(MODEL_WEIGHTS_DIR+str(i))
+                    summary_model.save_weights(MODEL_WEIGHTS_DIR)
                 temp_loss = 0
             break
         break
