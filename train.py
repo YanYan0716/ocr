@@ -19,9 +19,9 @@ if __name__ == '__main__':
     MODEL_WEIGHTS_DIR = './model_weights/summary_weights/best'
     SAVE_MODEL = False
     BEST_LOSS = 1000
-    LOSS_STEP = 20  # 设置评估loss的步长
+    LOSS_STEP = 1  # 设置评估loss的步长
     AUTOTUNE = tf.data.experimental.AUTOTUNE
-    LEARNING_RATE = 0.0001
+    LEARNING_RATE = 0.00001
 
     # 构建数据库
     # ----通过tf.data.Dataset.from_generator产生输入数据
@@ -77,10 +77,13 @@ if __name__ == '__main__':
     # 训练过程
     for i in range(MAX_EPOCHS):
         print(f'EPOCH {i+1} for MAX_EPOCH {MAX_EPOCHS}...')
-        temp_loss = 0
+        temp_loss = 0.0
+        det_loss = 0.0
+        reg_loss = 0.0
         for batch, (
                 images, image_fns, score_maps, geo_maps, training_masks, transform_matrixes, boxes_masks, box_widths, \
-                text_labels_sparse_0, text_labels_sparse_1, text_labels_sparse_2) in enumerate(dataset):
+                text_labels_sparse_0, text_labels_sparse_1, text_labels_sparse_2
+        ) in enumerate(dataset):
             with tf.GradientTape() as tape:
                 input_box_masks = tf.expand_dims(boxes_masks, axis=0)
                 input_box_widths = tf.expand_dims(box_widths, axis=0)
@@ -100,8 +103,9 @@ if __name__ == '__main__':
                                                    text_labels_sparse_0,
                                                    text_labels_sparse_1,
                                                    text_labels_sparse_2, )
-
-            total_loss = tf.cast(DetectLoss, dtype=tf.float32) + THETA * tf.cast(RecognitionLoss, dtype=tf.float32)
+                RecognitionLoss = THETA * tf.cast(RecognitionLoss, dtype=tf.float32)
+                DetectLoss = tf.cast(DetectLoss, tf.float32)
+            total_loss = DetectLoss + RecognitionLoss
 
             grad = tape.gradient([DetectLoss, RecognitionLoss], summary_model.trainable_weights)
             # # 观察是否可以进行反向传播
@@ -114,13 +118,20 @@ if __name__ == '__main__':
             # summary_model.save_weights(MODEL_WEIGHTS_DIR)
             # # 计算平均loss并保存模型
             temp_loss += total_loss.numpy()
+            det_loss += DetectLoss.numpy()
+            reg_loss += RecognitionLoss.numpy()
+
             if (batch + 1) % LOSS_STEP == 0:
                 now_loss = temp_loss / LOSS_STEP
-                print(f'the loss is :{now_loss}')
+                now_det_loss = det_loss / LOSS_STEP
+                now_reg_loss = reg_loss / LOSS_STEP
+                print(f'[det loss: %.5f]'%now_det_loss+' [reg loss: %.5f]/'%now_reg_loss+'[total loss: %.5f'%now_loss+']')
                 if now_loss < BEST_LOSS:
-                    print(f'saving model to ----> {MODEL_WEIGHTS_DIR}')
+                    # print(f'saving model to ----> {MODEL_WEIGHTS_DIR}')
                     BEST_LOSS = now_loss
-                    summary_model.save_weights(MODEL_WEIGHTS_DIR)
+                    # summary_model.save_weights(MODEL_WEIGHTS_DIR)
                 temp_loss = 0
+                det_loss = 0
+                reg_loss = 0
             break
         break
