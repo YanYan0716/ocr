@@ -19,7 +19,7 @@ if __name__ == '__main__':
     MODEL_WEIGHTS_DIR = './model_weights/summary_weights/best'
     SAVE_MODEL = False
     BEST_LOSS = 1000
-    LOSS_STEP = 1  # 设置评估loss的步长
+    LOSS_STEP = 20  # 设置评估loss的步长
     AUTOTUNE = tf.data.experimental.AUTOTUNE
     LEARNING_RATE = 0.00001
     WEIGHT_DIR = './model_weights/efficientnetb0/efficientnetb0_notop.h5'
