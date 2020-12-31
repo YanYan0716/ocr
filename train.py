@@ -22,6 +22,7 @@ if __name__ == '__main__':
     LOSS_STEP = 1  # 设置评估loss的步长
     AUTOTUNE = tf.data.experimental.AUTOTUNE
     LEARNING_RATE = 0.00001
+    WEIGHT_DIR = './model_weights/efficientnetb0/efficientnetb0_notop.h5'
 
     # 构建数据库
     # ----通过tf.data.Dataset.from_generator产生输入数据
@@ -34,8 +35,7 @@ if __name__ == '__main__':
     )
 
     # 搭建Detect网络
-    weight_dir = './model_weights/efficientnetb0/efficientnetb0_notop.h5'
-    detectmodel = Detect_model(base_weights_dir=weight_dir).model()
+    detectmodel = Detect_model(base_weights_dir=WEIGHT_DIR).model()
 
     # 搭建Recognition网络
     regmodel = Recognition_model(lstm_hidden_num=256).model()
@@ -125,11 +125,11 @@ if __name__ == '__main__':
                 now_loss = temp_loss / LOSS_STEP
                 now_det_loss = det_loss / LOSS_STEP
                 now_reg_loss = reg_loss / LOSS_STEP
-                print(f'[det loss: %.5f]'%now_det_loss+' [reg loss: %.5f]/'%now_reg_loss+'[total loss: %.5f'%now_loss+']')
+                print(f'[epoch {i}/ MAXEPOCH {MAX_EPOCHS}]:[det : %.5f]'%now_det_loss+' [reg : %.5f]/'%now_reg_loss+'[total loss: %.5f'%now_loss+']')
                 if now_loss < BEST_LOSS:
-                    # print(f'saving model to ----> {MODEL_WEIGHTS_DIR}')
+                    print(f'saving model to ----> {MODEL_WEIGHTS_DIR}')
                     BEST_LOSS = now_loss
-                    # summary_model.save_weights(MODEL_WEIGHTS_DIR)
+                    summary_model.save_weights(MODEL_WEIGHTS_DIR)
                 temp_loss = 0
                 det_loss = 0
                 reg_loss = 0
