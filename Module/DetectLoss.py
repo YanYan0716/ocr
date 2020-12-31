@@ -9,15 +9,11 @@ def dice_coefficient(true_cls, pred_cls, training_mask):
     :param training_mask:
     :return:
     '''
-    true_cls = tf.cast(true_cls, tf.int32)
-    pred_cls = tf.cast(pred_cls, tf.int32)
-    training_mask = tf.cast(training_mask, tf.int32)
     eps = 1e-5  # 保证除法中分母不为0
     inter = tf.reduce_sum(true_cls * pred_cls * training_mask)
-    inter = tf.cast(inter, tf.float64)
-    union_1 = tf.cast(tf.reduce_sum(true_cls * training_mask), tf.int32)
-    union_2 = tf.cast(tf.reduce_sum(pred_cls * training_mask), tf.int32)
-    union = tf.cast((union_1 + union_2), tf.float64) + eps
+    union_1 = tf.reduce_sum(true_cls * training_mask)
+    union_2 = tf.reduce_sum(pred_cls * training_mask)
+    union = (union_1 + union_2) + eps
     loss = 1. - (2 * inter / union)
     return loss
 
@@ -46,11 +42,11 @@ def detect_loss(y_true_cls, y_pred_cls, y_true_geo, y_pred_geo, training_mask):
     h_union = tf.minimum(d1_gt, d1_pred) + tf.minimum(d3_gt, d3_pred)
     area_inter = w_union * h_union
     area_union = area_gt + area_pred - area_inter
-    IOU = (tf.cast(area_inter, tf.float64) + 1.0) / (tf.cast(area_union, tf.float64) + 1.0)
+    IOU = (area_inter + 1.0) / (area_union + 1.0)
     L_AABB = -tf.math.log(IOU+ 1e-10)
-    L_theta = 1.0 - tf.math.cos(tf.cast(theta_pred - theta_gt, tf.float64))  # cos(0)=1
+    L_theta = 1.0 - tf.math.cos(theta_pred - theta_gt)  # cos(0)=1
     L_g = L_AABB + 20.0 * L_theta
-    loss_part = tf.reduce_mean(L_g * tf.cast(y_true_cls, tf.float64) * tf.cast(training_mask, tf.float64))
+    loss_part = tf.reduce_mean(L_g * y_true_cls * training_mask)
     return loss_part + classification_loss
 
 

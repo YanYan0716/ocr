@@ -1,6 +1,8 @@
 '''
 训练数据的生成
 '''
+import warnings
+warnings.filterwarnings("ignore", category=Warning)
 import math
 import sys
 from itertools import compress
@@ -14,11 +16,12 @@ import tensorflow as tf
 import pandas as pd
 import random
 import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import matplotlib.pyplot as plt
 import PIL.Image as Image
 import config
 import Aug_Operations as aug
-
+from Module.DetectLoss import detect_loss
 from DataPreprocess.PrepareForGRB import shrink_poly, earn_rect_angle, point_dist_to_line
 
 
@@ -278,7 +281,6 @@ def generate_rbox(img_size, polys, tags):
             # left
             geo_map[y, x, 3] = point_dist_to_line(p3_rect, p0_rect, point)
             geo_map[y, x, 4] = angle
-
     return score_map, geo_map, training_mask, rectangles
 
 
@@ -381,9 +383,9 @@ def generator(INPUT_SIZE=512,
     :param random_scale:
     :return:
     '''
-    img_list = open('./icdar/train/image.txt', 'r').readlines()
+    img_list = open('./icdar/train/images.txt', 'r').readlines()
     img_list = [img_mem.strip() for img_mem in img_list]
-    gt_list = open('./icdar/train/GT.txt', 'r').readlines()
+    gt_list = open('./icdar/train/GTs.txt', 'r').readlines()
     gt_list = [gt_mem.strip() for gt_mem in gt_list]
 
     batch_size = config.BATCH_SIZE
@@ -450,7 +452,6 @@ def generator(INPUT_SIZE=512,
 
             # 生成矩形框，这里的矩形是基于四个顶点坐标，带有旋转角度
             score_map, geo_map, training_mask, rectangles = generate_rbox((new_h, new_w), text_polys, text_tags)
-            # print(rectangles[0])
 
             text_label = [text_label[i] for i in selected_poly]
 
@@ -581,24 +582,52 @@ if __name__ == '__main__':
     )
 
     for i in range(1):
-        print('**************************')
-        for batch, (images, \
-                    image_fns, \
-                    score_maps, \
-                    geo_maps, \
-                    training_masks, \
-                    transform_matrixes, \
-                    boxes_masks, \
-                    box_widths, \
-                    text_labels_sparse_0, \
-                    text_labels_sparse_1, \
-                    text_labels_sparse_2
-                    ) in enumerate(dataset):
-            # print(i, batch)
-            # 打印一个batch_size的信息
+        for batch, (images, image_fns, score_maps, geo_maps, training_masks, transform_matrixes, boxes_masks, \
+                    box_widths, text_labels_sparse_0, text_labels_sparse_1, text_labels_sparse_2) in enumerate(dataset):
+            # DetectLoss = detect_loss(tf.cast(score_maps, tf.float32),
+            #                          tf.cast(score_maps, tf.float32),
+            #                          tf.cast(geo_maps, tf.float32),
+            #                          tf.cast(geo_maps, tf.float32),
+            #                          tf.cast(training_masks, tf.float32))
+            # print(DetectLoss)
+
+            # 显示一个batch的输出
+            plt.figure()
+            plt.subplot(2, 2, 1)
+            plt.title('image')
+            plt.imshow(images[0][::4, ::4, :] / 255.)
+            plt.subplot(2, 2, 2)
+            plt.title('score_maps')
+            plt.set_cmap('binary')
+            plt.imshow(score_maps[0])
+            plt.subplot(2, 2, 3)
+            plt.title('training_mask')
+            plt.set_cmap('binary')
+            plt.imshow(training_masks[0])
+            plt.subplot(2, 2, 4)
+            plt.title('show GT area')
+            d1_gt, d2_gt, d3_gt, d4_gt, theta_gt, = tf.split(value=geo_maps, num_or_size_splits=5, axis=3)
+            area_gt = (d1_gt + d3_gt) * (d2_gt + d4_gt)
+            area_gt = tf.transpose(area_gt, perm=[0, 2, 1, 3])
+            area_gt = area_gt[0]
+            print(area_gt.shape)
+            area_gt = np.concatenate([area_gt, area_gt, area_gt], axis=2)/255.0
+            plt.imshow(area_gt)
+            plt.show()
+
+            # 显示真实的标签信息
+            # number = 0
+            # text_info = ''
+            # for i in range(len(text_labels_sparse[1])):
+            #     str_index = text_labels_sparse[1][i]
+            #     text_info += (config.CHAR_VECTOR[str_index])
+            # print('------文字部分的标签信息可视化----------')
+            # print(f'每一个字符对应的索引: {text_labels_sparse[1]}')
+            # print(f'对应的索引转化为字符: {text_info}')
+            # ******打印一个batch_size的信息
             # print('--------------总结一个batch_size的相关输出--------------')
             # print(f'images shape\t\t\t: {(images/255.0).shape}')
-            print(f'image_fns shape\t\t\t: {image_fns}')
+            # print(f'image_fns shape\t\t\t: {image_fns.shape}')
             # print(f'score_maps shape\t\t: {score_maps.shape}')
             # print(f'geo_maps shape\t\t\t: {geo_maps.shape}')
             # print(f'training_masks shape\t\t: {training_masks.shape}')
@@ -611,4 +640,5 @@ if __name__ == '__main__':
             # print(f'transform_matrixes: {transform_matrixes}')
             # print(f'boxes_masks: {boxes_masks}')
             # print(f'box_widths: {box_widths}')
+
 
