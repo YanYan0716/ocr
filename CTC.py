@@ -1,3 +1,8 @@
+import os
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+import warnings
+warnings.filterwarnings("ignore", category=Warning)
 import tensorflow as tf
 
 
