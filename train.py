@@ -125,7 +125,7 @@ if __name__ == '__main__':
                 now_loss = temp_loss / LOSS_STEP
                 now_det_loss = det_loss / LOSS_STEP
                 now_reg_loss = reg_loss / LOSS_STEP
-                print(f'[epoch {i}/ MAXEPOCH {MAX_EPOCHS}]:[det : %.5f]'%now_det_loss+' [reg : %.5f]/'%now_reg_loss+'[total loss: %.5f'%now_loss+']')
+                print(f'[epoch {i}/ MAXEPOCH {MAX_EPOCHS}]:[det: %.5f]'%now_det_loss+' [reg: %.5f]/'%now_reg_loss+'[total: %.5f'%now_loss+']')
                 if now_loss < BEST_LOSS:
                     print(f'saving model to ----> {MODEL_WEIGHTS_DIR}')
                     BEST_LOSS = now_loss
