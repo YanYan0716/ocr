@@ -414,8 +414,6 @@ def generator(INPUT_SIZE=512,
     text_labels = []
     count = 0
     for i in index:
-        # print(len(images), len(text_polyses), len(image_fns), len(score_maps), len(geo_maps), len(training_masks))
-        # print(len(text_polyses), len(text_tagses), len(boxes_masks), len(text_labels))
         try:
             # 读取图片 对一张图片的处理
             img_fn = img_list[i]
@@ -627,31 +625,26 @@ if __name__ == '__main__':
             # plt.imshow(area_gt)
             # plt.show()
 
+            # ******打印一个batch_size的信息
+            print('--------------总结一个batch_size的相关输出--------------')
+            print(f'images shape\t\t\t: {(images/255.0).shape}')
+            print(f'image_fns shape\t\t\t: {image_fns}')
+            print(f'score_maps shape\t\t: {score_maps.shape}')
+            print(f'geo_maps shape\t\t\t: {geo_maps.shape}')
+            print(f'training_masks shape\t\t: {training_masks.shape}')
+            print(f'transform_matrixes shape\t: {transform_matrixes.shape}')
+            print(f'boxes_masks \t\t: {boxes_masks}')
+            print(f'box_widths \t\t: {box_widths}')
+            print(f'text_labels_sparse_0 shape\t: {text_labels_sparse_0}')
+            print(f'text_labels_sparse_1 \t: {text_labels_sparse_1}')
+            print(f'text_labels_sparse_2 \t: {text_labels_sparse_2}')
+
             # 显示真实的标签信息
             number = 0
             text_info = ''
-            # for i in range(len(text_labels_sparse[1])):
-            #     str_index = text_labels_sparse[1][i]
-            #     text_info += (config.CHAR_VECTOR[str_index])
-            # print('------文字部分的标签信息可视化----------')
-            # print(f'每一个字符对应的索引: {text_labels_sparse[1]}')
-            # print(f'对应的索引转化为字符: {text_info}')
-            # ******打印一个batch_size的信息
-            # print('--------------总结一个batch_size的相关输出--------------')
-            # print(f'images shape\t\t\t: {(images/255.0).shape}')
-            # print(f'image_fns shape\t\t\t: {image_fns}')
-            # print(f'score_maps shape\t\t: {score_maps.shape}')
-            # print(f'geo_maps shape\t\t\t: {geo_maps.shape}')
-            # print(f'training_masks shape\t\t: {training_masks.shape}')
-            # print(f'transform_matrixes shape\t: {transform_matrixes.shape}')
-            # print(f'boxes_masks \t\t: {boxes_masks}')
-            # print(f'box_widths \t\t: {box_widths}')
-            # print(f'text_labels_sparse_0 shape\t: {text_labels_sparse_0.shape}')
-            # print(f'text_labels_sparse_1 \t: {text_labels_sparse_1}')
-            # print(f'text_labels_sparse_2 \t: {text_labels_sparse_2}')
-            # print(f'transform_matrixes: {transform_matrixes}')
-            # print(f'boxes_masks: {boxes_masks}')
-            # print(f'box_widths: {box_widths}')
-            # print('-------the end of batch size------------')
-            print(f'{image_fns}')
-            # break
+            for i in range(len(text_labels_sparse_1)):
+                str_index = text_labels_sparse_1[i]
+                text_info += (config.CHAR_VECTOR[str_index])
+            print('------文字部分的标签信息可视化----------')
+            print(f'每一个字符对应的索引: {text_labels_sparse_1}')
+            print(f'对应的索引转化为字符: {text_info}')
