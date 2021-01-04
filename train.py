@@ -9,6 +9,7 @@ from Module.RecognitionBackbone import Recognition_model
 from Module.RecognitionLoss import recognition_loss
 from Module.DetectBackbone import Detect_model
 from DataPreprocess.DataGen import generator
+from Module.WarmupLR import WarmUpLR
 import config
 
 if __name__ == '__main__':
@@ -16,13 +17,13 @@ if __name__ == '__main__':
     THETA = 0.01  # 控制检测和识别loss占总体loss的权重
     TRAIN = True
     CONTINUE_TRAIN = False
-    MODEL_WEIGHTS_DIR = './model_weights/summary_weights/best'
     SAVE_MODEL = False
     BEST_LOSS = 1000
     LOSS_STEP = 20  # 设置评估loss的步长
     AUTOTUNE = tf.data.experimental.AUTOTUNE
-    LEARNING_RATE = 0.00001
+    LEARNING_RATE = 0.0001
     WEIGHT_DIR = './model_weights/efficientnetb0/efficientnetb0_notop.h5'
+    MODEL_WEIGHTS_DIR = './model_weights/summary_weights/best'
 
     # 构建数据库
     # ----通过tf.data.Dataset.from_generator产生输入数据
@@ -72,7 +73,8 @@ if __name__ == '__main__':
 
     print(len(summary_model.trainable_weights))
 
-    optim = keras.optimizers.SGD(learning_rate=LEARNING_RATE)
+    warm_up_lr = WarmUpLR(final_LR=LEARNING_RATE, d_model=128, warmup_steps=800, warm_time=3)
+    optim = keras.optimizers.SGD(learning_rate=warm_up_lr)
 
     # 训练过程
     for i in range(MAX_EPOCHS):
