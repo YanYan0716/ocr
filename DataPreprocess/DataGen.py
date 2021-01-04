@@ -401,8 +401,8 @@ def generator(INPUT_SIZE=512,
     gt_list = np.array(gt_list)
     index = np.arange(0, img_list.shape[0])
 
-    # np.random.shuffle(index)
-    # np.random.shuffle(index)
+    np.random.shuffle(index)
+    np.random.shuffle(index)
     images = []
     image_fns = []
     score_maps = []
@@ -575,7 +575,6 @@ def generator(INPUT_SIZE=512,
         except:
             import traceback
             traceback.print_exc()
-            print('data reading have something error in DataGenerator.generator')
 
 
 if __name__ == '__main__':
