@@ -27,17 +27,22 @@ from DataPreprocess.PrepareForGRB import shrink_poly, earn_rect_angle, point_dis
 
 def label_to_array(label):
     '''
-    将实际的字符转为数字标签
+    将实际的字符转为数字标签, 对于不认识的字符，直接跳过
     :param label:
     :return:
     '''
+    index_label = []
     try:
         label = label.replace(' ', '')
-        return [config.CHAR_VECTOR.index(x) for x in label]
+        for i in (label):
+            try:
+                index_label.append(config.CHAR_VECTOR.index(i))
+            except:
+                continue
+        return index_label
+        # return [config.CHAR_VECTOR.index(x) for x in label]
     except:
-        print(label)
         print('something error in DaraGenerator.label_to_array')
-    # return label
 
 
 def load_annoatation(p):
@@ -396,8 +401,8 @@ def generator(INPUT_SIZE=512,
     gt_list = np.array(gt_list)
     index = np.arange(0, img_list.shape[0])
 
-    np.random.shuffle(index)
-    np.random.shuffle(index)
+    # np.random.shuffle(index)
+    # np.random.shuffle(index)
     images = []
     image_fns = []
     score_maps = []
@@ -409,6 +414,8 @@ def generator(INPUT_SIZE=512,
     text_labels = []
     count = 0
     for i in index:
+        # print(len(images), len(text_polyses), len(image_fns), len(score_maps), len(geo_maps), len(training_masks))
+        # print(len(text_polyses), len(text_tagses), len(boxes_masks), len(text_labels))
         try:
             # 读取图片 对一张图片的处理
             img_fn = img_list[i]
@@ -433,9 +440,10 @@ def generator(INPUT_SIZE=512,
 
             # 对图片进行裁剪
             img, text_polys, text_tags, selected_poly = crop_area(img, text_polys, text_tags, crop_background=False)
-            # print(text_polys.shape, text_tags)
+
             if text_polys.shape[0] == 0 or len(text_label) == 0:
                 continue
+
             h, w, _ = img.shape
             max_h_w_i = np.max([h, w, INPUT_SIZE])
             img_padded = np.zeros((max_h_w_i, max_h_w_i, 3), dtype=np.uint8)
@@ -463,8 +471,8 @@ def generator(INPUT_SIZE=512,
             rectangles = list(compress(rectangles, mask))
 
             assert len(text_label) == len(rectangles)
+
             if len(text_label) == 0:
-                # print('text_label is 0')
                 continue
 
             boxes_mask = [count] * len(rectangles)
@@ -475,6 +483,7 @@ def generator(INPUT_SIZE=512,
             images.append(img[:, :, ::-1].astype(np.float32))
             image_fns.append(img_fn)
             # np.array([1,2,3,4,5,6,7,8,9,0])[::4] 表示每隔4个点取一个点，所以score_map shape变为【128， 128】
+
             score_maps.append(score_map[::4, ::4, np.newaxis])
             geo_maps.append(geo_map[::4, ::4, :].astype(np.float32))
             training_masks.append(training_mask[::4, ::4, np.newaxis].astype(np.float32))
@@ -482,6 +491,7 @@ def generator(INPUT_SIZE=512,
             boxes_masks.extend(boxes_mask)
             text_labels.extend(text_label)
             text_tagses.append(text_tags)  # 其中False的数量 = len(test_ployses[0])
+            # print(f'===============about the index {i} picture, {file_name}')
 
             # 如果图片的数量够一个batch_size
             if len(images) == batch_size:
@@ -520,6 +530,8 @@ def generator(INPUT_SIZE=512,
                 #   1. 第一维是这个字符属于第几个矩形框，第二维是顺序索引，
                 #   2. 所有字符串中字符顺序排列后的数字index
                 #   3. 两个数字，前者表示一共有多少个字符串，后者是这些字符串中最常的字符串的len
+                # print(f'text_labels: {text_labels}')
+
                 text_labels_sparse = sparse_tuple_from(np.array(text_labels))
 
                 boxes_masks2 = []
@@ -561,12 +573,13 @@ def generator(INPUT_SIZE=512,
                 text_labels = []
                 count = 0
         except:
+            import traceback
+            traceback.print_exc()
             print('data reading have something error in DataGenerator.generator')
-            break
 
 
 if __name__ == '__main__':
-    img_list = open('./icdar/train/images.txt', 'r').readlines()
+    img_list = open('./icdar/train/image.txt', 'r').readlines()
     img_list = [img_mem.strip() for img_mem in img_list]
     gt_list = open('./icdar/train/GT.txt', 'r').readlines()
     gt_list = [gt_mem.strip() for gt_mem in gt_list]
@@ -592,32 +605,32 @@ if __name__ == '__main__':
             # print(DetectLoss)
 
             # 显示一个batch的输出
-            plt.figure()
-            plt.subplot(2, 2, 1)
-            plt.title('image')
-            plt.imshow(images[0][::4, ::4, :] / 255.)
-            plt.subplot(2, 2, 2)
-            plt.title('score_maps')
-            plt.set_cmap('binary')
-            plt.imshow(score_maps[0])
-            plt.subplot(2, 2, 3)
-            plt.title('training_mask')
-            plt.set_cmap('binary')
-            plt.imshow(training_masks[0])
-            plt.subplot(2, 2, 4)
-            plt.title('show GT area')
-            d1_gt, d2_gt, d3_gt, d4_gt, theta_gt, = tf.split(value=geo_maps, num_or_size_splits=5, axis=3)
-            area_gt = (d1_gt + d3_gt) * (d2_gt + d4_gt)
-            area_gt = tf.transpose(area_gt, perm=[0, 2, 1, 3])
-            area_gt = area_gt[0]
-            print(area_gt.shape)
-            area_gt = np.concatenate([area_gt, area_gt, area_gt], axis=2)/255.0
-            plt.imshow(area_gt)
-            plt.show()
+            # plt.figure()
+            # plt.subplot(2, 2, 1)
+            # plt.title('image')
+            # plt.imshow(images[0][::4, ::4, :] / 255.)
+            # plt.subplot(2, 2, 2)
+            # plt.title('score_maps')
+            # plt.set_cmap('binary')
+            # plt.imshow(score_maps[0])
+            # plt.subplot(2, 2, 3)
+            # plt.title('training_mask')
+            # plt.set_cmap('binary')
+            # plt.imshow(training_masks[0])
+            # plt.subplot(2, 2, 4)
+            # plt.title('show GT area')
+            # d1_gt, d2_gt, d3_gt, d4_gt, theta_gt, = tf.split(value=geo_maps, num_or_size_splits=5, axis=3)
+            # area_gt = (d1_gt + d3_gt) * (d2_gt + d4_gt)
+            # area_gt = tf.transpose(area_gt, perm=[0, 2, 1, 3])
+            # area_gt = area_gt[0]
+            # print(area_gt.shape)
+            # area_gt = np.concatenate([area_gt, area_gt, area_gt], axis=2)/255.0
+            # plt.imshow(area_gt)
+            # plt.show()
 
             # 显示真实的标签信息
-            # number = 0
-            # text_info = ''
+            number = 0
+            text_info = ''
             # for i in range(len(text_labels_sparse[1])):
             #     str_index = text_labels_sparse[1][i]
             #     text_info += (config.CHAR_VECTOR[str_index])
@@ -627,7 +640,7 @@ if __name__ == '__main__':
             # ******打印一个batch_size的信息
             # print('--------------总结一个batch_size的相关输出--------------')
             # print(f'images shape\t\t\t: {(images/255.0).shape}')
-            # print(f'image_fns shape\t\t\t: {image_fns.shape}')
+            # print(f'image_fns shape\t\t\t: {image_fns}')
             # print(f'score_maps shape\t\t: {score_maps.shape}')
             # print(f'geo_maps shape\t\t\t: {geo_maps.shape}')
             # print(f'training_masks shape\t\t: {training_masks.shape}')
@@ -640,5 +653,6 @@ if __name__ == '__main__':
             # print(f'transform_matrixes: {transform_matrixes}')
             # print(f'boxes_masks: {boxes_masks}')
             # print(f'box_widths: {box_widths}')
-
-
+            # print('-------the end of batch size------------')
+            print(f'{image_fns}')
+            # break

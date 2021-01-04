@@ -5,9 +5,9 @@ import config
 
 
 def recognition_loss(logits, labels_indices, labels_values, labels_dense_shape):
-    labels_sparse_tensor = tf.SparseTensor(indices=tf.cast(labels_indices, tf.int32),
+    labels_sparse_tensor = tf.SparseTensor(indices=tf.cast(labels_indices, tf.int64),
                                            values=labels_values,
-                                           dense_shape=tf.cast(labels_dense_shape, tf.int32))
+                                           dense_shape=tf.cast(labels_dense_shape, tf.int64))
     log_len = []
     for index in range(logits.shape[1]):
         log_len.append(config.NUM_CLASSES)
