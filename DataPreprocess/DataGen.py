@@ -243,6 +243,9 @@ def generate_rbox(img_size, polys, tags):
 
     training_mask = np.ones((h, w), dtype=np.uint8)  # 标志图像中该点的像素值是否接受训练，数值为0表示不接受训练
     rectangles = []
+    # 当training_mask和score_map在相同像素位置全为1的时候才是可训练的
+    # score_map的0过滤掉了原数据集中没有训练目标的像素
+    # training_mask的0过滤掉了面积过小的训练像素和不需要训练的像素
 
     for poly_idx, poly_tag in enumerate(zip(polys, tags)):
         poly = poly_tag[0]
@@ -330,7 +333,8 @@ def get_project_matrix_and_width(polys):
         delta4 = random.uniform(-0.3, 0.3)
 
         if width > 1.5 * height:  # 宽大于长的情况
-            # math.ceil:返回 >= 参数的最小整数 ？？？？？？？？？和ROIRotate有关，，，，，，
+            # math.ceil:返回 >= 参数的最小整数
+            # 参考RRotateLayer.py的line 99中的数字8
             width_box = math.ceil(8 * width / height)
             # 对于x1x2保持y坐标的一致，也就是平行于x轴做小范围的长度变化
             # 对于x1x4保持x坐标的一致，也就是平行于y轴做小范围的长度变化
@@ -602,42 +606,42 @@ if __name__ == '__main__':
             # print(DetectLoss)
 
             # 显示一个batch的输出
-            # plt.figure()
-            # plt.subplot(2, 2, 1)
-            # plt.title('image')
-            # plt.imshow(images[0][::4, ::4, :] / 255.)
-            # plt.subplot(2, 2, 2)
-            # plt.title('score_maps')
-            # plt.set_cmap('binary')
-            # plt.imshow(score_maps[0])
-            # plt.subplot(2, 2, 3)
-            # plt.title('training_mask')
-            # plt.set_cmap('binary')
-            # plt.imshow(training_masks[0])
-            # plt.subplot(2, 2, 4)
-            # plt.title('show GT area')
-            # d1_gt, d2_gt, d3_gt, d4_gt, theta_gt, = tf.split(value=geo_maps, num_or_size_splits=5, axis=3)
-            # area_gt = (d1_gt + d3_gt) * (d2_gt + d4_gt)
-            # area_gt = tf.transpose(area_gt, perm=[0, 2, 1, 3])
-            # area_gt = area_gt[0]
-            # print(area_gt.shape)
-            # area_gt = np.concatenate([area_gt, area_gt, area_gt], axis=2)/255.0
-            # plt.imshow(area_gt)
-            # plt.show()
+            plt.figure()
+            plt.subplot(2, 2, 1)
+            plt.title('image')
+            plt.imshow(images[0][::4, ::4, :] / 255.)
+            plt.subplot(2, 2, 2)
+            plt.title('score_maps')
+            plt.set_cmap('binary')
+            plt.imshow(score_maps[0])
+            plt.subplot(2, 2, 3)
+            plt.title('training_mask')
+            plt.set_cmap('binary')
+            plt.imshow(training_masks[0])
+            plt.subplot(2, 2, 4)
+            plt.title('show GT area')
+            d1_gt, d2_gt, d3_gt, d4_gt, theta_gt, = tf.split(value=geo_maps, num_or_size_splits=5, axis=3)
+            area_gt = (d1_gt + d3_gt) * (d2_gt + d4_gt)
+            area_gt = tf.transpose(area_gt, perm=[0, 2, 1, 3])
+            area_gt = area_gt[0]
+            print(area_gt.shape)
+            area_gt = np.concatenate([area_gt, area_gt, area_gt], axis=2)/255.0
+            plt.imshow(area_gt)
+            plt.show()
 
             # ******打印一个batch_size的信息
-            print('--------------总结一个batch_size的相关输出--------------')
-            print(f'images shape\t\t\t: {(images/255.0).shape}')
-            print(f'image_fns shape\t\t\t: {image_fns}')
-            print(f'score_maps shape\t\t: {score_maps.shape}')
-            print(f'geo_maps shape\t\t\t: {geo_maps.shape}')
-            print(f'training_masks shape\t\t: {training_masks.shape}')
-            print(f'transform_matrixes shape\t: {transform_matrixes.shape}')
-            print(f'boxes_masks \t\t: {boxes_masks}')
-            print(f'box_widths \t\t: {box_widths}')
-            print(f'text_labels_sparse_0 shape\t: {text_labels_sparse_0}')
-            print(f'text_labels_sparse_1 \t: {text_labels_sparse_1}')
-            print(f'text_labels_sparse_2 \t: {text_labels_sparse_2}')
+            # print('--------------总结一个batch_size的相关输出--------------')
+            # print(f'images shape\t\t\t: {(images/255.0).shape}')
+            # print(f'image_fns shape\t\t\t: {image_fns}')
+            # print(f'score_maps shape\t\t: {score_maps.shape}')
+            # print(f'geo_maps shape\t\t\t: {geo_maps.shape}')
+            # print(f'training_masks shape\t\t: {training_masks.shape}')
+            # print(f'transform_matrixes shape\t: {transform_matrixes.shape}')
+            # print(f'boxes_masks \t\t: {boxes_masks}')
+            # print(f'box_widths \t\t: {box_widths}')
+            # print(f'text_labels_sparse_0 \t: {text_labels_sparse_0}')
+            # print(f'text_labels_sparse_1 \t: {text_labels_sparse_1}')
+            # print(f'text_labels_sparse_2 \t: {text_labels_sparse_2}')
 
             # 显示真实的标签信息
             number = 0
