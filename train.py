@@ -13,11 +13,11 @@ from Module.WarmupLR import WarmUpLR
 import config
 
 if __name__ == '__main__':
-    MAX_EPOCHS = 1
+    MAX_EPOCHS = 1000
     THETA = 0.01  # 控制检测和识别loss占总体loss的权重
     TRAIN = True
     CONTINUE_TRAIN = False
-    MODEL_WEIGHTS_DIR = './model_weights/summary_weights/best'
+    MODEL_WEIGHTS_DIR = '/content/drive/MyDrive/tensorflow/ocr/ocr/model_weights/summary_weights/best'
     SAVE_MODEL = False
     BEST_LOSS = 1000
     LOSS_STEP = 20  # 设置评估loss的步长

@@ -126,8 +126,8 @@ class Detect_model(keras.Model):
         super(Detect_model, self).__init__()
         self.base_weights_dir = base_weights_dir
         self.base_model = keras.applications.EfficientNetB0(include_top=False,
-                                                            weights=self.base_weights_dir,
-                                                            #weights='imagenet',
+                                                            # weights=self.base_weights_dir,
+                                                            weights='imagenet',
                                                             input_tensor=None,
                                                             input_shape=None,
                                                             pooling='avg',
