@@ -17,13 +17,13 @@ if __name__ == '__main__':
     THETA = 0.01  # 控制检测和识别loss占总体loss的权重
     TRAIN = True
     CONTINUE_TRAIN = False
+    MODEL_WEIGHTS_DIR = './model_weights/summary_weights/best'
     SAVE_MODEL = False
     BEST_LOSS = 1000
     LOSS_STEP = 20  # 设置评估loss的步长
     AUTOTUNE = tf.data.experimental.AUTOTUNE
     LEARNING_RATE = 0.0001
     WEIGHT_DIR = './model_weights/efficientnetb0/efficientnetb0_notop.h5'
-    MODEL_WEIGHTS_DIR = './model_weights/summary_weights/best'
 
     # 构建数据库
     # ----通过tf.data.Dataset.from_generator产生输入数据
@@ -69,7 +69,6 @@ if __name__ == '__main__':
         regmodel.trainable = False
 
     if CONTINUE_TRAIN:
-        print('continue training ....')
         summary_model.load_weights(MODEL_WEIGHTS_DIR)
 
     print(len(summary_model.trainable_weights))
@@ -117,7 +116,6 @@ if __name__ == '__main__':
             #     if hasattr(grad[i], 'shape'):
             #         j += 1
             #         print(i, j, grad[i].shape)
-            grad = [tf.clip_by_norm(g, 5) for g in grad]
             optim.apply_gradients(zip(grad, summary_model.trainable_weights))
             # summary_model.save_weights(MODEL_WEIGHTS_DIR)
             # # 计算平均loss并保存模型
