@@ -392,9 +392,9 @@ def generator(INPUT_SIZE=512,
     :param random_scale:
     :return:
     '''
-    img_list = open('./icdar/train/images.txt', 'r').readlines()
+    img_list = open('./icdar/train/image.txt', 'r').readlines()
     img_list = [img_mem.strip() for img_mem in img_list]
-    gt_list = open('./icdar/train/GTs.txt', 'r').readlines()
+    gt_list = open('./icdar/train/GT.txt', 'r').readlines()
     gt_list = [gt_mem.strip() for gt_mem in gt_list]
 
     batch_size = config.BATCH_SIZE
@@ -606,33 +606,33 @@ if __name__ == '__main__':
             # print(DetectLoss)
 
             # 显示一个batch的输出
-            plt.figure()
-            plt.subplot(2, 2, 1)
-            plt.title('image')
-            plt.imshow(images[0][::4, ::4, :] / 255.)
-            plt.subplot(2, 2, 2)
-            plt.title('score_maps')
-            plt.set_cmap('binary')
-            plt.imshow(score_maps[0])
-            plt.subplot(2, 2, 3)
-            plt.title('training_mask')
-            plt.set_cmap('binary')
-            plt.imshow(training_masks[0])
-            plt.subplot(2, 2, 4)
-            plt.title('show GT area')
-            d1_gt, d2_gt, d3_gt, d4_gt, theta_gt, = tf.split(value=geo_maps, num_or_size_splits=5, axis=3)
-            area_gt = (d1_gt + d3_gt) * (d2_gt + d4_gt)
-            area_gt = tf.transpose(area_gt, perm=[0, 2, 1, 3])
-            area_gt = area_gt[0]
-            print(area_gt.shape)
-            area_gt = np.concatenate([area_gt, area_gt, area_gt], axis=2)/255.0
-            plt.imshow(area_gt)
-            plt.show()
+            # plt.figure()
+            # plt.subplot(2, 2, 1)
+            # plt.title('image')
+            # plt.imshow(images[0][::4, ::4, :] / 255.)
+            # plt.subplot(2, 2, 2)
+            # plt.title('score_maps')
+            # plt.set_cmap('binary')
+            # plt.imshow(score_maps[0])
+            # plt.subplot(2, 2, 3)
+            # plt.title('training_mask')
+            # plt.set_cmap('binary')
+            # plt.imshow(training_masks[0])
+            # plt.subplot(2, 2, 4)
+            # plt.title('show GT area')
+            # d1_gt, d2_gt, d3_gt, d4_gt, theta_gt, = tf.split(value=geo_maps, num_or_size_splits=5, axis=3)
+            # area_gt = (d1_gt + d3_gt) * (d2_gt + d4_gt)
+            # area_gt = tf.transpose(area_gt, perm=[0, 2, 1, 3])
+            # area_gt = area_gt[0]
+            # print(area_gt.shape)
+            # area_gt = np.concatenate([area_gt, area_gt, area_gt], axis=2)/255.0
+            # plt.imshow(area_gt)
+            # plt.show()
 
             # ******打印一个batch_size的信息
             # print('--------------总结一个batch_size的相关输出--------------')
             # print(f'images shape\t\t\t: {(images/255.0).shape}')
-            # print(f'image_fns shape\t\t\t: {image_fns}')
+            print(f'image_fns shape\t\t\t: {image_fns}')
             # print(f'score_maps shape\t\t: {score_maps.shape}')
             # print(f'geo_maps shape\t\t\t: {geo_maps.shape}')
             # print(f'training_masks shape\t\t: {training_masks.shape}')
@@ -644,11 +644,11 @@ if __name__ == '__main__':
             # print(f'text_labels_sparse_2 \t: {text_labels_sparse_2}')
 
             # 显示真实的标签信息
-            number = 0
-            text_info = ''
-            for i in range(len(text_labels_sparse_1)):
-                str_index = text_labels_sparse_1[i]
-                text_info += (config.CHAR_VECTOR[str_index])
-            print('------文字部分的标签信息可视化----------')
-            print(f'每一个字符对应的索引: {text_labels_sparse_1}')
-            print(f'对应的索引转化为字符: {text_info}')
+            # number = 0
+            # text_info = ''
+            # for i in range(len(text_labels_sparse_1)):
+            #     str_index = text_labels_sparse_1[i]
+            #     text_info += (config.CHAR_VECTOR[str_index])
+            # print('------文字部分的标签信息可视化----------')
+            # print(f'每一个字符对应的索引: {text_labels_sparse_1}')
+            # print(f'对应的索引转化为字符: {text_info}')
