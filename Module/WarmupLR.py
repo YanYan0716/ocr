@@ -1,7 +1,7 @@
 import tensorflow as tf
 import tensorflow.keras as keras
 
-from RRotateLayer import RotateModel
+from Module.RRotateLayer import RotateModel
 
 
 class WarmUpLR(keras.optimizers.schedules.LearningRateSchedule):
