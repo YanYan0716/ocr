@@ -69,7 +69,7 @@ if __name__ == '__main__':
         regmodel.trainable = False
 
     if CONTINUE_TRAIN:
-        print('continue training ...')
+        print('continue training ....')
         summary_model.load_weights(MODEL_WEIGHTS_DIR)
 
     print(len(summary_model.trainable_weights))
