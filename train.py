@@ -117,6 +117,7 @@ if __name__ == '__main__':
             #     if hasattr(grad[i], 'shape'):
             #         j += 1
             #         print(i, j, grad[i].shape)
+            grad = [tf.clip_by_norm(g, 5) for g in grad]
             optim.apply_gradients(zip(grad, summary_model.trainable_weights))
             # summary_model.save_weights(MODEL_WEIGHTS_DIR)
             # # 计算平均loss并保存模型
