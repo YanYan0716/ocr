@@ -1,3 +1,6 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
 import cv2
 import tensorflow as tf
 from tensorflow import keras
@@ -126,8 +129,8 @@ class Detect_model(keras.Model):
         super(Detect_model, self).__init__()
         self.base_weights_dir = base_weights_dir
         self.base_model = keras.applications.EfficientNetB0(include_top=False,
-                                                            # weights=self.base_weights_dir,
-                                                            weights='imagenet',
+                                                            weights=self.base_weights_dir,
+                                                            # weights='imagenet',
                                                             input_tensor=None,
                                                             input_shape=None,
                                                             pooling='avg',
@@ -176,36 +179,20 @@ def loss(a, b, c):
 if __name__ == '__main__':
     weight_dir = './model_weights/efficientnetb0/efficientnetb0_notop.h5'
     detectmodel = Detect_model(base_weights_dir=weight_dir).model()
+    optim = keras.optimizers.SGD(learning_rate=0.00001)
 
-    # 获取一张图片
-    img = 'img.jpg'
+    np.random.seed(1)
+    img = np.random.random((1, 224, 224, 3))
+    img = tf.convert_to_tensor(img, dtype=tf.float32)
 
-    # 限制图片的长宽尺寸，保持原比例
-    img = cv2.imread(img)
-
-    # 交换颜色通道
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    img = tf.convert_to_tensor(img, dtype=tf.float32) / 255.0
-    img = tf.expand_dims(img, axis=0)
-    print(f'img shape: {img.shape}')
-
-    optim = keras.optimizers.Adam()
-    for layer in detectmodel.layers:
-        layer.trainable = False
-    detectmodel.layers[-1].trainable = True
-
-    for i in range(len(detectmodel.trainable_weights)):
-        print(detectmodel.trainable_weights[i].name)
-    # print((detectmodel.trainable_weights[0]))
-
-    # with tf.GradientTape() as tape:
-    #     a, b, c = detectmodel(img, training=True)
-    #     print(a[0].shape)
-    #     loss_num = loss(a, b, c)
-    #     print(loss_num)
-    # grad = tape.gradient(loss_num, detectmodel.trainable_weights)
-    # optim.apply_gradients(zip(grad, detectmodel.trainable_weights))
-    # print(grad)
+    for i in range(0, 2):
+        with tf.GradientTape() as tape:
+            a, b, c = detectmodel(img, training=True)
+            LOSS = loss(a, b, c)
+            DetectLoss = tf.cast(LOSS, tf.float32)
+            print(DetectLoss)
+        grad = tape.gradient([DetectLoss], detectmodel.trainable_weights)
+        optim.apply_gradients(zip(grad, detectmodel.trainable_weights))
 
 # ----------------以下为原来的做法，好像也不是原文中的------------
 # import cv2
