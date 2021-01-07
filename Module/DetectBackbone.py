@@ -1,4 +1,7 @@
 import os
+
+from Module.DetectLoss import detect_loss
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 import cv2
@@ -182,14 +185,23 @@ if __name__ == '__main__':
     optim = keras.optimizers.SGD(learning_rate=0.00001)
 
     np.random.seed(1)
-    img = np.random.random((1, 224, 224, 3))
+    img = np.random.random((1, 512, 512, 3))
     img = tf.convert_to_tensor(img, dtype=tf.float32)
+    score_maps = np.random.random((1, 128, 128, 1))
+    score_maps = tf.convert_to_tensor(score_maps, dtype=tf.float32)
+    training_masks = np.random.random((1, 128, 128, 1))
+    training_masks = tf.convert_to_tensor(training_masks, dtype=tf.float32)
+    geo_maps = np.random.random((1, 128, 128, 5))
+    geo_maps = tf.convert_to_tensor(geo_maps, dtype=tf.float32)
 
     for i in range(0, 2):
         with tf.GradientTape() as tape:
             a, b, c = detectmodel(img, training=True)
-            LOSS = loss(a, b, c)
-            DetectLoss = tf.cast(LOSS, tf.float32)
+            DetectLoss = detect_loss(tf.cast(score_maps, tf.float32),
+                                     tf.cast(b, tf.float32),
+                                     tf.cast(geo_maps, tf.float32),
+                                     tf.cast(c, tf.float32),
+                                     tf.cast(training_masks, tf.float32))
             print(DetectLoss)
         grad = tape.gradient([DetectLoss], detectmodel.trainable_weights)
         optim.apply_gradients(zip(grad, detectmodel.trainable_weights))
