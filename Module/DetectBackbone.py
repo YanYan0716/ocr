@@ -1,8 +1,10 @@
 import os
-
-from Module.DetectLoss import detect_loss
-
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
+import sys
+sys.path.append('D:\\algorithm\\ocr')
+sys.path.append('E:\\algorithm\\ocr')
+sys.path.append('/content/ocr')
 
 import cv2
 import tensorflow as tf
@@ -10,6 +12,7 @@ from tensorflow import keras
 from tensorflow.keras import layers, regularizers
 import numpy as np
 
+from Module.DetectLoss import detect_loss
 '''
 与原文改动：使用反卷积替换unpool
 '''
