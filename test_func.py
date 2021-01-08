@@ -14,7 +14,7 @@ from Module.WarmupLR import WarmUpLR
 
 
 if __name__ == '__main__':
-    MAX_EPOCHS = 1
+    MAX_EPOCHS = 10000
     THETA = 0.01  # 控制检测和识别loss占总体loss的权重
     TRAIN = True
     CONTINUE_TRAIN = True
