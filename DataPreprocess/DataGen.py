@@ -396,9 +396,9 @@ def generator(INPUT_SIZE=512,
     # img_list = [img_mem.strip() for img_mem in img_list]
     # gt_list = open('./icdar/train/GT.txt', 'r').readlines()
     # gt_list = [gt_mem.strip() for gt_mem in gt_list]
-    img_list = open('/content/image/images.txt', 'r').readlines()
+    img_list = open('./icdar/train/images.txt', 'r').readlines()
     img_list = [img_mem.strip() for img_mem in img_list]
-    gt_list = open('/content/txt/GT.txt', 'r').readlines()
+    gt_list = open('./icdar/train/GTs.txt', 'r').readlines()
     gt_list = [gt_mem.strip() for gt_mem in gt_list]
 
     batch_size = config.BATCH_SIZE
@@ -637,7 +637,7 @@ if __name__ == '__main__':
             # ******打印一个batch_size的信息
             # print('--------------总结一个batch_size的相关输出--------------')
             # print(f'images shape\t\t\t: {(images/255.0).shape}')
-            #print(f'image_fns shape\t\t\t: {image_fns}')
+            # print(f'image_fns shape\t\t\t: {image_fns}')
             # print(f'score_maps shape\t\t: {score_maps.shape}')
             # print(f'geo_maps shape\t\t\t: {geo_maps.shape}')
             # print(f'training_masks shape\t\t: {training_masks.shape}')
@@ -648,14 +648,17 @@ if __name__ == '__main__':
             # print(f'text_labels_sparse_1 \t: {text_labels_sparse_1}')
             # print(f'text_labels_sparse_2 \t: {text_labels_sparse_2}')
             print(image_fns)
-            # 显示真实的标签信息
-            '''
-            number = 0
-            text_info = ''
-            for i in range(len(text_labels_sparse_1)):
-                str_index = text_labels_sparse_1[i]
-                text_info += (config.CHAR_VECTOR[str_index])
-            print('------文字部分的标签信息可视化----------')
-            print(f'每一个字符对应的索引: {text_labels_sparse_1}')
-            print(f'对应的索引转化为字符: {text_info}')
-            '''
+            break
+        break
+
+        # 显示真实的标签信息
+        # '''
+        # number = 0
+        # text_info = ''
+        # for i in range(len(text_labels_sparse_1)):
+        #     str_index = text_labels_sparse_1[i]
+        #     text_info += (config.CHAR_VECTOR[str_index])
+        # print('------文字部分的标签信息可视化----------')
+        # print(f'每一个字符对应的索引: {text_labels_sparse_1}')
+        # print(f'对应的索引转化为字符: {text_info}')
+        # '''
