@@ -53,6 +53,19 @@ if __name__ == '__main__':
 
     optim = keras.optimizers.Adam(learning_rate=LEARNING_RATE)
 
+    data = np.load('./test_data.npy', allow_pickle=True)
+    img = data[0]
+    score_maps = data[1]
+    geo_maps = data[2]
+    training_masks = data[3]
+    transform_matrixes = data[4]
+    boxes_masks = data[5]
+    box_widths = data[6]
+    text_labels_sparse_0 = data[7]
+    text_labels_sparse_1 = data[8]
+    text_labels_sparse_2 = data[9]
+
+    '''
     np.random.seed(1)
     img = np.random.random((1, 512, 512, 3))
     img = tf.convert_to_tensor(img, dtype=tf.float32)
@@ -85,6 +98,7 @@ if __name__ == '__main__':
 
     text_labels_sparse_2 = np.array([2, 4])
     text_labels_sparse_2 = tf.convert_to_tensor(text_labels_sparse_2, tf.int32)
+    '''
 
     # 训练过程
     for i in range(MAX_EPOCHS):

@@ -594,23 +594,23 @@ if __name__ == '__main__':
     for i in range(1):
         for batch, (images, image_fns, score_maps, geo_maps, training_masks, transform_matrixes, boxes_masks, \
                     box_widths, text_labels_sparse_0, text_labels_sparse_1, text_labels_sparse_2) in enumerate(dataset):
-            # data = []
-            # data.append(images)
-            # data.append(score_maps)
-            # data.append(geo_maps)
-            # data.append(training_masks)
-            # data.append(transform_matrixes)
-            # data.append(boxes_masks)
-            # data.append(box_widths)
-            # data.append(text_labels_sparse_0)
-            # data.append(text_labels_sparse_1)
-            # data.append(text_labels_sparse_2)
-            # np.save('./test_data.npy', data, allow_pickle=True)
-            # DetectLoss = detect_loss(tf.cast(score_maps, tf.float32),
-            #                          tf.cast(score_maps, tf.float32),
-            #                          tf.cast(geo_maps, tf.float32),
-            #                          tf.cast(geo_maps, tf.float32),
-            #                          tf.cast(training_masks, tf.float32))
+            data = []
+            data.append(images)
+            data.append(score_maps)
+            data.append(geo_maps)
+            data.append(training_masks)
+            data.append(transform_matrixes)
+            data.append(boxes_masks)
+            data.append(box_widths)
+            data.append(text_labels_sparse_0)
+            data.append(text_labels_sparse_1)
+            data.append(text_labels_sparse_2)
+            np.save('./test_data.npy', data, allow_pickle=True)
+            DetectLoss = detect_loss(tf.cast(score_maps, tf.float32),
+                                     tf.cast(score_maps, tf.float32),
+                                     tf.cast(geo_maps, tf.float32),
+                                     tf.cast(geo_maps, tf.float32),
+                                     tf.cast(training_masks, tf.float32))
             # print(DetectLoss)
             '''
             # 显示一个batch的输出
