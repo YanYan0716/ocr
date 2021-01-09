@@ -1,18 +1,20 @@
 import os
-
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-import sys
 
+import sys
 sys.path.append('D:\\algorithm\\ocr')
 sys.path.append('E:\\algorithm\\ocr')
 sys.path.append('/content/ocr/')
+
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers, regularizers
+import numpy as np
 
 
 import config
 from Module.RRotateLayer import RotateMyLayer
+from Module.RecognitionLoss import recognition_loss
 
 
 class CNNBlock(layers.Layer):
@@ -121,29 +123,53 @@ class Recognition_model(keras.Model):
 
 
 if __name__ == '__main__':
-    shared_features = tf.random.normal([2, 112, 112, 32])
-    input_transform_matrix = tf.random.normal([3, 6])
-    input_box_masks = tf.expand_dims(tf.convert_to_tensor([0, 0, 1]), axis=0)
-    input_box_widths = tf.expand_dims(tf.convert_to_tensor([55, 12, 13]), axis=0)
-    input_box_info = tf.transpose(tf.concat([input_box_masks, input_box_widths], axis=0))
+    shared_features = tf.random.normal([1, 256, 256, 32])
+    input_transform_matrix = tf.random.normal([2, 6])
+
+    input_box_masks = np.array([0., 0.])
+    input_box_masks = tf.convert_to_tensor(input_box_masks, dtype=tf.float32)
+
+    input_box_widths = np.array([17., 18.])
+    input_box_widths = tf.convert_to_tensor(input_box_widths, tf.float32)
 
     reg_model = Recognition_model(lstm_hidden_num=256).model()
 
-    x = reg_model([shared_features, input_transform_matrix, input_box_info])
-    # reg_model.save('./text')
-    reg_model.save_weights('./model_weights/ttt')
-    print(x.shape)
+    text_labels_sparse_0 = np.array([
+        [0,0], [0,1], [0, 2], [0, 3], [1, 0], [1, 1], [1, 2]
+    ])
+    text_labels_sparse_0 = tf.convert_to_tensor(text_labels_sparse_0, tf.int32)
 
-    reg_model.load_weights('./model_weights/ttt')
-    # logits = tf.zeros([192, 3, 94])
-    # text_labels_sparse=[]
-    # a=np.array([0, 0])
-    # text_labels_sparse.append(np.array([[0, 0],
-    #                                   [0, 1],
-    #                                   [0, 2],
-    #                                   [1, 0],
-    #                                   [1, 1],
-    #                                   [2, 0]]))
+    text_labels_sparse_1 = np.array([12, 12, 2, 2, 11, 30, 10])
+    text_labels_sparse_1 = tf.convert_to_tensor(text_labels_sparse_1, tf.int32)
+
+    text_labels_sparse_2 = np.array([2, 4])
+    text_labels_sparse_2 = tf.convert_to_tensor(text_labels_sparse_2, tf.int32)
+
+    optim = keras.optimizers.Adam(learning_rate=0.0001)
+
+    for i in range(1):
+        with tf.GradientTape() as tape:
+            input_box_masks = tf.expand_dims(input_box_masks, axis=0)
+            input_box_widths = tf.expand_dims(input_box_widths, axis=0)
+            input_box_info = tf.transpose(tf.concat([input_box_masks, input_box_widths], axis=0))
+
+            x = reg_model([shared_features, input_transform_matrix, input_box_info])
+            print(x.shape)
+            RecognitionLoss = recognition_loss(x,
+                                               text_labels_sparse_0,
+                                               text_labels_sparse_1,
+                                               text_labels_sparse_2,)
+            RecognitionLoss = 0.01 * tf.cast(RecognitionLoss, dtype=tf.float32)
+            print(RecognitionLoss)
+
+        grad = tape.gradient([RecognitionLoss], reg_model.trainable_weights)
+
+        grad = [tf.clip_by_norm(g, 2) for g in grad]
+        optim.apply_gradients(zip(grad, reg_model.trainable_weights))
+
+
+
+
     # # text_labels_sparse.append([1,2,3,4,5,6])
     # text_labels_sparse.append([1, 1, 1, 1, 1, 1])
     # text_labels_sparse.append([3, 3])

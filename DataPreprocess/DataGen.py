@@ -392,10 +392,6 @@ def generator(INPUT_SIZE=512,
     :param random_scale:
     :return:
     '''
-    # img_list = open('./icdar/train/image.txt', 'r').readlines()
-    # img_list = [img_mem.strip() for img_mem in img_list]
-    # gt_list = open('./icdar/train/GT.txt', 'r').readlines()
-    # gt_list = [gt_mem.strip() for gt_mem in gt_list]
     img_list = open('./icdar/train/images.txt', 'r').readlines()
     img_list = [img_mem.strip() for img_mem in img_list]
     gt_list = open('./icdar/train/GTs.txt', 'r').readlines()
@@ -585,11 +581,6 @@ def generator(INPUT_SIZE=512,
 
 
 if __name__ == '__main__':
-    img_list = open('./icdar/train/image.txt', 'r').readlines()
-    img_list = [img_mem.strip() for img_mem in img_list]
-    gt_list = open('./icdar/train/GT.txt', 'r').readlines()
-    gt_list = [gt_mem.strip() for gt_mem in gt_list]
-
     # ----通过tf.data.Dataset.from_generator产生输入数据
     Generator = generator()
 
@@ -603,6 +594,18 @@ if __name__ == '__main__':
     for i in range(1):
         for batch, (images, image_fns, score_maps, geo_maps, training_masks, transform_matrixes, boxes_masks, \
                     box_widths, text_labels_sparse_0, text_labels_sparse_1, text_labels_sparse_2) in enumerate(dataset):
+            # data = []
+            # data.append(images)
+            # data.append(score_maps)
+            # data.append(geo_maps)
+            # data.append(training_masks)
+            # data.append(transform_matrixes)
+            # data.append(boxes_masks)
+            # data.append(box_widths)
+            # data.append(text_labels_sparse_0)
+            # data.append(text_labels_sparse_1)
+            # data.append(text_labels_sparse_2)
+            # np.save('./test_data.npy', data, allow_pickle=True)
             # DetectLoss = detect_loss(tf.cast(score_maps, tf.float32),
             #                          tf.cast(score_maps, tf.float32),
             #                          tf.cast(geo_maps, tf.float32),
@@ -635,18 +638,18 @@ if __name__ == '__main__':
             plt.show()
             '''
             # ******打印一个batch_size的信息
-            # print('--------------总结一个batch_size的相关输出--------------')
-            # print(f'images shape\t\t\t: {(images/255.0).shape}')
-            # print(f'image_fns shape\t\t\t: {image_fns}')
-            # print(f'score_maps shape\t\t: {score_maps.shape}')
-            # print(f'geo_maps shape\t\t\t: {geo_maps.shape}')
-            # print(f'training_masks shape\t\t: {training_masks.shape}')
-            # print(f'transform_matrixes shape\t: {transform_matrixes.shape}')
-            # print(f'boxes_masks \t\t: {boxes_masks}')
-            # print(f'box_widths \t\t: {box_widths}')
-            # print(f'text_labels_sparse_0 \t: {text_labels_sparse_0}')
-            # print(f'text_labels_sparse_1 \t: {text_labels_sparse_1}')
-            # print(f'text_labels_sparse_2 \t: {text_labels_sparse_2}')
+            print('--------------总结一个batch_size的相关输出--------------')
+            print(f'images shape\t\t\t: {(images/255.0).shape}')
+            print(f'image_fns shape\t\t\t: {image_fns}')
+            print(f'score_maps shape\t\t: {score_maps.shape}')
+            print(f'geo_maps shape\t\t\t: {geo_maps.shape}')
+            print(f'training_masks shape\t\t: {training_masks.shape}')
+            print(f'transform_matrixes shape\t: {transform_matrixes.shape}')
+            print(f'boxes_masks \t\t: {boxes_masks}')
+            print(f'box_widths \t\t: {box_widths}')
+            print(f'text_labels_sparse_0 \t: {text_labels_sparse_0}')
+            print(f'text_labels_sparse_1 \t: {text_labels_sparse_1}')
+            print(f'text_labels_sparse_2 \t: {text_labels_sparse_2}')
             print(image_fns)
             break
         break

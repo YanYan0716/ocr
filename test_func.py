@@ -26,7 +26,6 @@ if __name__ == '__main__':
     WEIGHT_DIR = './model_weights/efficientnetb0/efficientnetb0_notop.h5'
     MODEL_WEIGHTS_DIR = './model_weights/summary_weights/best'
 
-
     # 搭建Detect网络
     detectmodel = Detect_model(base_weights_dir=WEIGHT_DIR).model()
 

@@ -197,9 +197,10 @@ if __name__ == '__main__':
     geo_maps = np.random.random((1, 128, 128, 5))
     geo_maps = tf.convert_to_tensor(geo_maps, dtype=tf.float32)
 
-    for i in range(0, 2):
+    for i in range(0, 1):
         with tf.GradientTape() as tape:
             a, b, c = detectmodel(img, training=True)
+            print(a.shape)
             DetectLoss = detect_loss(tf.cast(score_maps, tf.float32),
                                      tf.cast(b, tf.float32),
                                      tf.cast(geo_maps, tf.float32),
