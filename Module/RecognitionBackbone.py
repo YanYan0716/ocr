@@ -154,7 +154,7 @@ if __name__ == '__main__':
             input_box_info = tf.transpose(tf.concat([input_box_masks, input_box_widths], axis=0))
 
             x = reg_model([shared_features, input_transform_matrix, input_box_info])
-            print(x.shape)
+
             RecognitionLoss = recognition_loss(x,
                                                text_labels_sparse_0,
                                                text_labels_sparse_1,
