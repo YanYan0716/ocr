@@ -111,6 +111,7 @@ class Recognition_model(keras.Model):
         a = self.layer(x)
         a = self.encoder(a)
         a = tf.squeeze(a, axis=1)
+        # print(a.shape)
         a = self.decoder(a)
         return a
 

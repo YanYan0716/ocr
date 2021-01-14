@@ -17,7 +17,7 @@ def recognition_loss(logits, labels_indices, labels_values, labels_dense_shape):
                           logits=logits,
                           label_length=None,
                           logit_length=logits_length,
-                          blank_index=config.BLACK_INDEX,
+                          blank_index= -1,
                           logits_time_major=True)
     loss = tf.reduce_mean(loss)
     return loss
