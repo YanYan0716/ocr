@@ -26,7 +26,7 @@ def unpool(inputs):
 class ConvBlock(layers.Layer):
     def __init__(self, output_num, kernel_size=1, activation_fn='relu', bn_flag=True, name=None):
         super(ConvBlock, self).__init__()
-        k_initializer = tf.keras.initializers.he_normal()
+        k_initializer = tf.keras.initializers.truncated_normal()
         b_initializer = tf.keras.initializers.zeros()
         self.conv = layers.Conv2D(output_num,
                                   kernel_size,
@@ -131,7 +131,8 @@ class ContectBlock(layers.Layer):
         angle_map = (self.conv_sing_1_2(self.g[3]) - 0.5) * np.pi / 2
         F_geometry = tf.concat([geo_map, angle_map], axis=-1)
 
-        return self.g_recong[4], F_score, F_geometry
+        # return self.g_recong[4], F_score, F_geometry
+        return self.g[3], F_score, F_geometry
 
 
 class Detect_model(keras.Model):

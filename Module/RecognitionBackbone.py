@@ -20,7 +20,7 @@ from Module.RecognitionLoss import recognition_loss
 class CNNBlock(layers.Layer):
     def __init__(self, out_channels, cnn_kernel_size=3, pooling_kernel_size=[2, 1]):
         super(CNNBlock, self).__init__()
-        k_initializer = tf.keras.initializers.he_normal()
+        k_initializer = tf.keras.initializers.truncated_normal()
         b_initializer = tf.keras.initializers.zeros()
         self.conv1 = layers.Conv2D(filters=out_channels,
                                    kernel_size=cnn_kernel_size,
@@ -78,7 +78,7 @@ class LstmDecoder(layers.Layer):
     def __init__(self, lstm_hidden_num):
         super(LstmDecoder, self).__init__()
         self.lstm_hidden_num = lstm_hidden_num
-        k_initializer = tf.keras.initializers.he_normal()
+        k_initializer = tf.keras.initializers.truncated_normal()
         b_initializer = tf.keras.initializers.zeros()
         forward_layer = layers.LSTMCell(
             self.lstm_hidden_num,
