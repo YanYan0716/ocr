@@ -123,7 +123,7 @@ if __name__ == '__main__':
             RecognitionLoss = THETA * tf.cast(RecognitionLoss, dtype=tf.float32)
             DetectLoss = tf.cast(DetectLoss, tf.float32)
             total_loss = DetectLoss + RecognitionLoss
-            print(total_loss)
+            print(f'[epoch {i}/ MAXEPOCH {MAX_EPOCHS}]:[det: %.5f]'%DetectLoss+' [reg: %.5f]/'%RecognitionLoss+'[total: %.5f'%total_loss+']')
 
         grad = tape.gradient([total_loss], summary_model.trainable_weights)
 
