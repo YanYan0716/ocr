@@ -20,8 +20,12 @@ from Module.RecognitionLoss import recognition_loss
 class CNNBlock(layers.Layer):
     def __init__(self, out_channels, cnn_kernel_size=3, pooling_kernel_size=[2, 1]):
         super(CNNBlock, self).__init__()
+        k_initializer = tf.keras.initializers.he_normal()
+        b_initializer = tf.keras.initializers.zeros()
         self.conv1 = layers.Conv2D(filters=out_channels,
                                    kernel_size=cnn_kernel_size,
+                                   kernel_initializer=k_initializer,
+                                   bias_initializer=b_initializer,
                                    kernel_regularizer=regularizers.l2(1e-5),
                                    data_format='channels_last',
                                    activation='relu',
@@ -30,6 +34,8 @@ class CNNBlock(layers.Layer):
         self.conv2 = layers.Conv2D(filters=out_channels,
                                    kernel_size=cnn_kernel_size,
                                    kernel_regularizer=regularizers.l2(1e-5),
+                                   kernel_initializer=k_initializer,
+                                   bias_initializer=b_initializer,
                                    data_format='channels_last',
                                    activation='relu',
                                    padding='same')
@@ -72,12 +78,32 @@ class LstmDecoder(layers.Layer):
     def __init__(self, lstm_hidden_num):
         super(LstmDecoder, self).__init__()
         self.lstm_hidden_num = lstm_hidden_num
-        self.bilstm = layers.Bidirectional(
-            layers.GRU(units=self.lstm_hidden_num,
-                       dropout=0.8,
-                       return_sequences=True,
-                       return_state=False)
+        k_initializer = tf.keras.initializers.he_normal()
+        b_initializer = tf.keras.initializers.zeros()
+        forward_layer = layers.LSTMCell(
+            self.lstm_hidden_num,
+            dropout=0.8,
+            recurrent_dropout=0.8,
+            kernel_initializer=k_initializer,
+            bias_initializer=b_initializer
         )
+        backward_layer = layers.LSTMCell(
+            self.lstm_hidden_num,
+            dropout=0.8,
+            recurrent_dropout=0.8,
+            kernel_initializer=k_initializer,
+            bias_initializer=b_initializer,
+        )
+        forward_layer = layers.RNN(forward_layer, return_sequences=True)
+        backward_layer = layers.RNN(backward_layer, return_sequences=True, go_backwards=True)
+
+        self.bilstm = layers.Bidirectional(forward_layer, backward_layer=backward_layer)
+        # self.bilstm = layers.Bidirectional(
+        #     layers.GRU(units=self.lstm_hidden_num,
+        #                dropout=0.8,
+        #                return_sequences=True,
+        #                return_state=False)
+        # )
 
     def call(self, input_tensor):
         batch_size = tf.shape(input_tensor)[0]

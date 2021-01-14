@@ -26,10 +26,14 @@ def unpool(inputs):
 class ConvBlock(layers.Layer):
     def __init__(self, output_num, kernel_size=1, activation_fn='relu', bn_flag=True, name=None):
         super(ConvBlock, self).__init__()
+        k_initializer = tf.keras.initializers.he_normal()
+        b_initializer = tf.keras.initializers.zeros()
         self.conv = layers.Conv2D(output_num,
                                   kernel_size,
                                   activation=activation_fn,
+                                  kernel_initializer=k_initializer,
                                   kernel_regularizer=regularizers.l2(1e-5),
+                                  bias_initializer=b_initializer,
                                   padding='same',
                                   trainable=True,
                                   name=name

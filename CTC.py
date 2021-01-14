@@ -36,5 +36,5 @@ if __name__ == '__main__':
     label的第二种实现形式可以是稀疏矩阵，具体实现将在实际代码中
     '''
     loss = tf.nn.ctc_loss(label_tensor, logits_tensor, label_length=labels_length_tensor, logit_length= logits_length_tensor,
-                          logits_time_major=False, blank_index=4)
+                          logits_time_major=False, blank_index=-1)
     print(loss.numpy())
