@@ -32,7 +32,7 @@ class ConvBlock(layers.Layer):
                                   kernel_size,
                                   activation=activation_fn,
                                   kernel_initializer=k_initializer,
-                                  kernel_regularizer=regularizers.l2(1e-5),
+                                  kernel_regularizer=regularizers.L2(l2=1e-5),
                                   bias_initializer=b_initializer,
                                   padding='same',
                                   trainable=True,

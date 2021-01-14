@@ -26,14 +26,14 @@ class CNNBlock(layers.Layer):
                                    kernel_size=cnn_kernel_size,
                                    kernel_initializer=k_initializer,
                                    bias_initializer=b_initializer,
-                                   kernel_regularizer=regularizers.l2(1e-5),
+                                   kernel_regularizer=regularizers.L2(l2=1e-5),
                                    data_format='channels_last',
                                    activation='relu',
                                    padding='same')
         self.bn = layers.BatchNormalization(epsilon=1e-5, scale=True, trainable=True, )
         self.conv2 = layers.Conv2D(filters=out_channels,
                                    kernel_size=cnn_kernel_size,
-                                   kernel_regularizer=regularizers.l2(1e-5),
+                                   kernel_regularizer=regularizers.L2(l2=1e-5),
                                    kernel_initializer=k_initializer,
                                    bias_initializer=b_initializer,
                                    data_format='channels_last',
