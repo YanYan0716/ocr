@@ -131,8 +131,8 @@ class ContectBlock(layers.Layer):
         angle_map = (self.conv_sing_1_2(self.g[3]) - 0.5) * np.pi / 2
         F_geometry = tf.concat([geo_map, angle_map], axis=-1)
 
-        # return self.g_recong[4], F_score, F_geometry
-        return self.g[3], F_score, F_geometry
+        return self.g_recong[4], F_score, F_geometry
+        # return self.g[3], F_score, F_geometry
 
 
 class Detect_model(keras.Model):
@@ -140,8 +140,8 @@ class Detect_model(keras.Model):
         super(Detect_model, self).__init__()
         self.base_weights_dir = base_weights_dir
         self.base_model = keras.applications.EfficientNetB0(include_top=False,
-                                                            # weights=self.base_weights_dir,
-                                                            weights='imagenet',
+                                                            weights=self.base_weights_dir,
+                                                            # weights='imagenet',
                                                             input_tensor=None,
                                                             input_shape=None,
                                                             pooling='avg',
@@ -192,28 +192,41 @@ if __name__ == '__main__':
     detectmodel = Detect_model(base_weights_dir=weight_dir).model()
     optim = keras.optimizers.SGD(learning_rate=0.00001)
 
-    np.random.seed(1)
-    img = np.random.random((1, 512, 512, 3))
-    img = tf.convert_to_tensor(img, dtype=tf.float32)
-    score_maps = np.random.random((1, 128, 128, 1))
-    score_maps = tf.convert_to_tensor(score_maps, dtype=tf.float32)
-    training_masks = np.random.random((1, 128, 128, 1))
-    training_masks = tf.convert_to_tensor(training_masks, dtype=tf.float32)
-    geo_maps = np.random.random((1, 128, 128, 5))
-    geo_maps = tf.convert_to_tensor(geo_maps, dtype=tf.float32)
+    # np.random.seed(1)
+    # img = np.random.random((1, 512, 512, 3))
+    # img = tf.convert_to_tensor(img, dtype=tf.float32)
+    # score_maps = np.random.random((1, 128, 128, 1))
+    # score_maps = tf.convert_to_tensor(score_maps, dtype=tf.float32)
+    # training_masks = np.random.random((1, 128, 128, 1))
+    # training_masks = tf.convert_to_tensor(training_masks, dtype=tf.float32)
+    # geo_maps = np.random.random((1, 128, 128, 5))
+    # geo_maps = tf.convert_to_tensor(geo_maps, dtype=tf.float32)
+
+    data = np.load('./test_data.npy', allow_pickle=True)
+    img = data[0]
+    score_maps = data[1]
+    geo_maps = data[2]
+    training_masks = data[3]
+    transform_matrixes = data[4]
+    boxes_masks = data[5]
+    box_widths = data[6]
+    text_labels_sparse_0 = data[7]
+    text_labels_sparse_1 = data[8]
+    text_labels_sparse_2 = data[9]
 
     for i in range(0, 1):
         with tf.GradientTape() as tape:
             a, b, c = detectmodel(img, training=True)
             print(a.shape)
+            print(b.shape)
             DetectLoss = detect_loss(tf.cast(score_maps, tf.float32),
                                      tf.cast(b, tf.float32),
                                      tf.cast(geo_maps, tf.float32),
                                      tf.cast(c, tf.float32),
                                      tf.cast(training_masks, tf.float32))
-            print(DetectLoss)
-        grad = tape.gradient([DetectLoss], detectmodel.trainable_weights)
-        optim.apply_gradients(zip(grad, detectmodel.trainable_weights))
+        #     print(DetectLoss)
+        # grad = tape.gradient([DetectLoss], detectmodel.trainable_weights)
+        # optim.apply_gradients(zip(grad, detectmodel.trainable_weights))
 
 # ----------------以下为原来的做法，好像也不是原文中的------------
 # import cv2
