@@ -53,7 +53,7 @@ if __name__ == '__main__':
 
     optim = keras.optimizers.Adam(learning_rate=LEARNING_RATE)
 
-    data = np.load('./test_data.npy', allow_pickle=True)
+    data = np.load('/content/ocr/test_data.npy', allow_pickle=True)
     img = data[0]
     score_maps = data[1]
     geo_maps = data[2]
