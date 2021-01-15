@@ -98,6 +98,13 @@ class LstmDecoder(layers.Layer):
         backward_layer = layers.RNN(backward_layer, return_sequences=True, go_backwards=True)
 
         self.bilstm = layers.Bidirectional(forward_layer, backward_layer=backward_layer)
+        self.W = tf.Variable(
+            initial_value=lambda: tf.random.truncated_normal(
+                shape=[self.lstm_hidden_num * 2, config.NUM_CLASSES],
+                stddev=0.1),
+            trainable=True)
+        self.b = tf.Variable(initial_value=lambda: tf.constant(0., shape=[config.NUM_CLASSES]),
+                        trainable=True)
         # self.bilstm = layers.Bidirectional(
         #     layers.GRU(units=self.lstm_hidden_num,
         #                dropout=0.8,
@@ -109,16 +116,7 @@ class LstmDecoder(layers.Layer):
         batch_size = tf.shape(input_tensor)[0]
         lstm_output = self.bilstm(input_tensor)
         infer_output = tf.reshape(lstm_output, [-1, self.lstm_hidden_num * 2])
-
-        W = tf.Variable(
-            initial_value=lambda: tf.random.truncated_normal(
-                shape=[self.lstm_hidden_num * 2, config.NUM_CLASSES],
-                stddev=0.1),
-            trainable=True)
-        b = tf.Variable(initial_value=lambda: tf.constant(0., shape=[config.NUM_CLASSES]),
-                        trainable=True)
-
-        logits = tf.add(tf.matmul(infer_output, W), b)
+        logits = tf.add(tf.matmul(infer_output, self.W), self.b)
         logits = tf.reshape(logits, [batch_size, -1, config.NUM_CLASSES])
         logits = tf.transpose(logits, (1, 0, 2))
         return logits
@@ -137,7 +135,7 @@ class Recognition_model(keras.Model):
         a = self.layer(x)
         a = self.encoder(a)
         a = tf.squeeze(a, axis=1)
-        # print(a.shape)
+        print(a.shape)
         a = self.decoder(a)
         return a
 
@@ -182,17 +180,17 @@ if __name__ == '__main__':
 
             x = reg_model([shared_features, input_transform_matrix, input_box_info])
 
-            RecognitionLoss = recognition_loss(x,
-                                               text_labels_sparse_0,
-                                               text_labels_sparse_1,
-                                               text_labels_sparse_2,)
-            RecognitionLoss = 0.01 * tf.cast(RecognitionLoss, dtype=tf.float32)
-            print(RecognitionLoss)
-
-        grad = tape.gradient([RecognitionLoss], reg_model.trainable_weights)
-
-        grad = [tf.clip_by_norm(g, 2) for g in grad]
-        optim.apply_gradients(zip(grad, reg_model.trainable_weights))
+        #     RecognitionLoss = recognition_loss(x,
+        #                                        text_labels_sparse_0,
+        #                                        text_labels_sparse_1,
+        #                                        text_labels_sparse_2,)
+        #     RecognitionLoss = 0.01 * tf.cast(RecognitionLoss, dtype=tf.float32)
+        #     print(RecognitionLoss)
+        #
+        # grad = tape.gradient([RecognitionLoss], reg_model.trainable_weights)
+        #
+        # grad = [tf.clip_by_norm(g, 2) for g in grad]
+        # optim.apply_gradients(zip(grad, reg_model.trainable_weights))
 
 
 

@@ -57,7 +57,7 @@ class RoiRotate(object):
 
 
 if __name__ == '__main__':
-    shared_features = tf.random.normal([2, 112, 112, 32])
+    shared_features = tf.random.normal([1, 256, 256, 32])
     input_transform_matrix = tf.random.normal([3, 6])
     input_box_masks = [np.array([0, 0]), np.array([1])]
     input_box_widths = [55, 12, 13]

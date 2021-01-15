@@ -190,7 +190,7 @@ def loss(a, b, c):
 if __name__ == '__main__':
     weight_dir = './model_weights/efficientnetb0/efficientnetb0_notop.h5'
     detectmodel = Detect_model(base_weights_dir=weight_dir).model()
-    optim = keras.optimizers.SGD(learning_rate=0.00001)
+    optim = keras.optimizers.SGD(learning_rate=0.0001)
 
     # np.random.seed(1)
     # img = np.random.random((1, 512, 512, 3))
@@ -224,9 +224,9 @@ if __name__ == '__main__':
                                      tf.cast(geo_maps, tf.float32),
                                      tf.cast(c, tf.float32),
                                      tf.cast(training_masks, tf.float32))
-        #     print(DetectLoss)
-        # grad = tape.gradient([DetectLoss], detectmodel.trainable_weights)
-        # optim.apply_gradients(zip(grad, detectmodel.trainable_weights))
+            print(DetectLoss)
+        grad = tape.gradient([DetectLoss], detectmodel.trainable_weights)
+        optim.apply_gradients(zip(grad, detectmodel.trainable_weights))
 
 # ----------------以下为原来的做法，好像也不是原文中的------------
 # import cv2
