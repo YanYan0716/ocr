@@ -54,7 +54,7 @@ def load_annoatation(p):
     text_polys = []  # 存储矩形框
     text_tags = []  # 存储是否有字符，有为False 没有为True
     labels = []  # 存储字符的内容，此处已经将字母转换为对应的数字label
-    with open(p, 'r') as f:
+    with open(p, 'r', encoding='utf-8') as f:
         for line in f.readlines():
             line = line.replace('\xef\xbb\xbf', '')
             line = line.replace('\xe2\x80\x8d', '')
