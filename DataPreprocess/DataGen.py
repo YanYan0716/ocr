@@ -605,7 +605,7 @@ if __name__ == '__main__':
             data.append(text_labels_sparse_0)
             data.append(text_labels_sparse_1)
             data.append(text_labels_sparse_2)
-            np.save('./test_data.npy', data, allow_pickle=True)
+            np.save('./test_data_test_0.npy', data, allow_pickle=True)
             DetectLoss = detect_loss(tf.cast(score_maps, tf.float32),
                                      tf.cast(score_maps, tf.float32),
                                      tf.cast(geo_maps, tf.float32),
@@ -640,7 +640,7 @@ if __name__ == '__main__':
             # ******打印一个batch_size的信息
             # print('--------------总结一个batch_size的相关输出--------------')
             # print(f'images shape\t\t\t: {(images/255.0).shape}')
-            # print(f'image_fns shape\t\t\t: {image_fns}')
+            print(f'image_fns shape\t\t\t: {image_fns}')
             # print(f'score_maps shape\t\t: {score_maps.shape}')
             # print(f'geo_maps shape\t\t\t: {geo_maps.shape}')
             # print(f'training_masks shape\t\t: {training_masks.shape}')
