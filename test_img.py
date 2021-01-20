@@ -4,13 +4,11 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import cv2
 import tensorflow as tf
 import tensorflow.keras as keras
-from tensorflow.keras.models import Model
 
-from DataPreprocess.imgUtil import ResizeImg
-from Module.DetectBackbone import DetectModel
-from DetectUtil import detect_contours
 
 from Module.DetectBackbone import Detect_model
+from Module.RecognitionBackbone import Recognition_model
+
 
 if __name__ == '__main__':
     # 获取一张图片
@@ -24,16 +22,39 @@ if __name__ == '__main__':
     img = tf.convert_to_tensor(img, dtype=tf.float32) / 255.0
     img = tf.expand_dims(img, axis=0)
     print(f'img shape: {img.shape}')
+    # ------------------
+    WEIGHT_DIR = './model_weights/efficientnetb0/efficientnetb0_notop.h5'
+    MODEL_WEIGHTS_DIR = '/content/drive/MyDrive/tensorflow/ocr/ocr/model_weights/summary_weights/best'
 
     # 搭建Detect网络
-    weight_dir = './model_weights/efficientnetb0/efficientnetb0_notop.h5'
-    detectmodel = Detect_model(trainable=False, base_weights_dir=weight_dir).model()
-    for i in range(len(detectmodel.layers)):
-        print(detectmodel.layers[i])
-    for j in range(4):
-        x = detectmodel.predict_step(img)
-        for i in range(len(x)):
-            print(x[i].shape)
+    detectmodel = Detect_model(base_weights_dir=WEIGHT_DIR).model()
+
+    # 搭建Recognition网络
+    regmodel = Recognition_model(lstm_hidden_num=256).model()
+
+    #  模型融合
+    inputs1 = detectmodel.layers[0].input
+    inputs2 = detectmodel(inputs1)[0]
+    inputs3 = regmodel.inputs[1]
+    inputs4 = regmodel.inputs[2]
+    all_inputs = [inputs1, inputs3, inputs4]
+
+    outputs0 = detectmodel(inputs1)[0]
+    outputs1 = detectmodel(inputs1)[1]
+    outputs2 = detectmodel(inputs1)[2]
+    all_outputs = [outputs0, outputs1, outputs2, regmodel([outputs0, inputs3, inputs4])]
+
+    summary_model = keras.Model(all_inputs, all_outputs)
+
+    detectmodel.trainable = False
+    regmodel.trainable = False
+    summary_model.load_weights(MODEL_WEIGHTS_DIR)
+
+    # 预测结果
+
+    shared_feature, f_score, f_geometry, recognition_logits = summary_model(
+        [images / 255.0, transform_matrixes, input_box_info]
+    )
 
 
 
