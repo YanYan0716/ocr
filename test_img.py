@@ -66,9 +66,9 @@ if __name__ == '__main__':
 
     summary_model = keras.Model(all_inputs, all_outputs)
     # print(summary_model.summary())
-    for i in range(len(summary_model.layers[4].inputs)):
-        print(i)
-        print(summary_model.layers[4].inputs[i].shape)
+    # for i in range(len(summary_model.layers[4].inputs)):
+    #     print(i)
+    #     print(summary_model.layers[4].inputs[i].shape)
 
     img = np.random.random((1, 512, 512, 3))
     img = tf.convert_to_tensor(img, dtype=tf.float32)
@@ -76,7 +76,10 @@ if __name__ == '__main__':
     with tf.GradientTape() as tape:
         # 经过detect的部分
         x = summary_model.layers[0](img)
-        shared_feature, f_score, f_geometry = summary_model.layers[0](x)
+        out = summary_model.layers[0](x)
+        shared_feature = out[0]
+        f_score = out[1]
+        f_geometry = out[2]
         # 处理detect的结果
         boxes = detect_contours(score_map=f_score, geo_map=f_geometry)
 
