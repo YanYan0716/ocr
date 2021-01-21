@@ -76,7 +76,7 @@ if __name__ == '__main__':
     with tf.GradientTape() as tape:
         # 经过detect的部分
         x = summary_model.layers[0](img)
-        out = summary_model.layers[0](x)
+        out = summary_model.layers[1](x)
         shared_feature = out[0]
         f_score = out[1]
         f_geometry = out[2]
