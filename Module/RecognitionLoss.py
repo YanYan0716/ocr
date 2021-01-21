@@ -1,6 +1,13 @@
+import os
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import tensorflow as tf
+import numpy as np
 
-
+import sys
+sys.path.append('D:\\algorithm\\ocr')
+sys.path.append('E:\\algorithm\\ocr')
+sys.path.append('/home/epai/yanqian/ocr')
 import config
 
 
@@ -25,7 +32,26 @@ def recognition_loss(logits, labels_indices, labels_values, labels_dense_shape):
 
 def decode(logits, seq_len):
     decoded, log_prob = tf.nn.ctc_greedy_decoder(logits, seq_len, merge_repeated=True)
-    # 有问题。。。。。。。。。
-    a = tf.sparse.SparseTensor(decoded[0])
-    dense_decoded = tf.sparse.to_dense(a, default_value=-1) # 有问题，？？？？？？？？？？？
-    return decoded, dense_decoded
+    # print(len(decoded))
+    print(decoded[0].shape)
+    dense_decoded = tf.sparse.to_dense(decoded[0], default_value=-1) # 有问题，？？？？？？？？？？？
+    return dense_decoded
+
+
+if __name__ == '__main__':
+    # 检测decode函数的正确性, 默认将最后tensor中每个time step的最后一位数值代表black index
+    tensor = np.zeros((384, 95))
+    tensor[:, -1] = tensor[:, -1]+1
+    tensor[0][1] = 2
+    tensor[1][10] = 4
+    print(tensor[10])
+    tensor = tf.convert_to_tensor(tensor, dtype=tf.float32)
+
+    tensor = tf.expand_dims(tensor, axis=1)
+    seq_len = [95]  # 代表了一共有多少个分类
+    seq_len = tf.convert_to_tensor(seq_len, dtype=tf.int32)
+    result = decode(tensor, seq_len)
+    print(result)
+
+
+

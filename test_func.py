@@ -1,6 +1,10 @@
 import os
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+import sys
+sys.path.append('D:\\algorithm\\ocr')
+sys.path.append('E:\\algorithm\\ocr')
+sys.path.append('/home/epai/yanqian/ocr')
 import tensorflow as tf
 import tensorflow.keras as keras
 import numpy as np

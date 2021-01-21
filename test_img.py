@@ -112,8 +112,8 @@ if __name__ == '__main__':
                 # 经过识别部分
                 logits = summary_model.layers[4]([shared_feature, transform_matrixes, input_box_info])
                 # 将识别结果解码
-                logits = decode(logits=logits, seq_len=input_box_widths)
-                recod_decode_list.append(logits)
+                dense_decode = decode(logits=logits, seq_len=input_box_widths)
+                recod_decode_list.append(dense_decode)
         # -----------------汇总全部结果
         with open(config.TEST_RESULT_PATH, 'w') as f:
             for i, box in enumerate(boxes):
