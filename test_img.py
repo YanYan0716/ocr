@@ -81,7 +81,7 @@ if __name__ == '__main__':
         f_score = out[1]
         f_geometry = out[2]
         # 处理detect的结果
-        boxes = detect_contours(score_map=f_score, geo_map=f_geometry)
+        boxes = detect_contours(score_map=f_score.numpy(), geo_map=f_geometry.numpy())
 
         # 处理recognition部分
         if boxes is not None and boxes.shape[0] != 0:

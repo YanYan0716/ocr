@@ -191,8 +191,7 @@ def detect_contours(score_map, geo_map, score_map_thresh=0.8, box_thresh=0.1, nm
         rec_box[:, :8] = text_box_restored.reshape((-1, 8))
         rec_box[:, 8] = score_sum
         # break
-    res_boxes.append(rec_box)
-    # print(res_boxes[0].shape)
+        res_boxes.append(rec_box)
     boxes =np.squeeze(np.array(res_boxes), axis=0)
     # print(boxes)
     # print(boxes.shape)
@@ -211,7 +210,7 @@ def detect_contours(score_map, geo_map, score_map_thresh=0.8, box_thresh=0.1, nm
         mask = np.zeros_like(score_map, dtype=np.uint8)
         cv2.fillPoly(mask, box[:8].reshape((-1, 4, 2)).astype(np.int32) // 4, 1)
         boxes[i, 8] = cv2.mean(score_map, mask)[0]
-        print(boxes[:, 8])
+        # print(boxes[:, 8])
     boxes = boxes[boxes[:, 8] > box_thresh]
 
     return boxes
@@ -232,15 +231,15 @@ if __name__ == '__main__':
     share_data = np.load('./share_data.npy')
     print(score.shape, geometry.shape, share_data.shape)
     boxes = detect_contours(score, geometry)
-    print(boxes)
-    if boxes is not None and boxes.shape[0] != 0:
-        boxes_detect = boxes.copy()
-        boxes_detect = boxes_detect[:, :8].reshape((-1, 4, 2))
-        im = cv2.imread('./123.jpg')
-        for i , box in enumerate(boxes_detect):
-            box = sort_poly(box.astype(np.int32))
-            if np.linalg.norm(box[0]-box[1])<5 or np.linalg.norm(box[3]-box[0])<5:
-                continue
-            print(box)
-            cv2.polylines(im, [box.astype(np.int32).reshape((-1, 1, 2))], True, color=(255, 255, 0), thickness=1)
-        cv2.imwrite('./result.jpg', im)
+    # print(boxes)
+    # if boxes is not None and boxes.shape[0] != 0:
+    #     boxes_detect = boxes.copy()
+    #     boxes_detect = boxes_detect[:, :8].reshape((-1, 4, 2))
+    #     im = cv2.imread('./123.jpg')
+    #     for i , box in enumerate(boxes_detect):
+    #         box = sort_poly(box.astype(np.int32))
+    #         if np.linalg.norm(box[0]-box[1])<5 or np.linalg.norm(box[3]-box[0])<5:
+    #             continue
+    #         print(box)
+    #         cv2.polylines(im, [box.astype(np.int32).reshape((-1, 1, 2))], True, color=(255, 255, 0), thickness=1)
+    #     cv2.imwrite('./result.jpg', im)
